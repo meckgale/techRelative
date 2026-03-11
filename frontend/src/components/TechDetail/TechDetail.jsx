@@ -1,9 +1,24 @@
-import { memo } from 'react'
+import { memo, useMemo } from 'react'
 import { useTechDetail } from '../../hooks/useGraphData'
 import { ERA_COLORS, CATEGORY_COLORS } from '../../utils/constants'
 
 function TechDetail({ techId, onClose, onNavigate }) {
-  const { tech, loading } = useTechDetail(techId)
+  const { tech, relations, loading } = useTechDetail(techId)
+
+  // Extract unique neighbor technologies from relations
+  const related = useMemo(() => {
+    if (!techId || !relations.length) return []
+    const seen = new Set()
+    const result = []
+    for (const r of relations) {
+      const other = r.from?._id === techId ? r.to : r.from
+      if (other && !seen.has(other._id)) {
+        seen.add(other._id)
+        result.push(other)
+      }
+    }
+    return result
+  }, [techId, relations])
 
   if (!techId) return null
 
@@ -48,7 +63,7 @@ function TechDetail({ techId, onClose, onNavigate }) {
 
           {tech.civilization && (
             <div className="detail-field">
-              <span className="detail-field-label">Civilization</span>
+              <span className="detail-field-label">Region</span>
               {tech.civilization}
             </div>
           )}
@@ -70,11 +85,11 @@ function TechDetail({ techId, onClose, onNavigate }) {
             </div>
           )}
 
-          {tech.seeAlso?.length > 0 && (
+          {related.length > 0 && (
             <div className="detail-section">
               <span className="detail-field-label">Related</span>
               <div className="related-list">
-                {tech.seeAlso.map((rel) => (
+                {related.map((rel) => (
                   <button
                     key={rel._id}
                     className="related-link"

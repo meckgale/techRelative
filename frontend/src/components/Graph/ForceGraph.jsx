@@ -18,12 +18,14 @@ function ForceGraph({
   edges,
   colorBy = 'era',
   onNodeClick,
+  selectedId = null,
   searchTerm = '',
 }) {
   const canvasRef = useRef(null)
   const simRef = useRef(null)
   const transformRef = useRef(d3.zoomIdentity)
   const hoveredRef = useRef(null)
+  const selectedIdRef = useRef(null)
   const timeScaleRef = useRef(null)
   const [tooltip, setTooltip] = useState(null)
 
@@ -97,6 +99,11 @@ function ForceGraph({
     }
     searchSet.current = s
   }, [searchTerm, nodes])
+
+  // Keep selectedId in a ref so the draw loop can access it
+  useEffect(() => {
+    selectedIdRef.current = selectedId
+  }, [selectedId])
 
   const getColor = useCallback(
     (node) => {
@@ -184,12 +191,17 @@ function ForceGraph({
     ctx.translate(t.x, t.y)
     ctx.scale(t.k, t.k)
 
+    const selId = selectedIdRef.current
+    const selNeighbors = selId ? adjMap.current.get(selId)?.neighbors : null
     const hovered = hoveredRef.current
     const hoveredNeighbors = hovered
       ? adjMap.current.get(hovered._id)?.neighbors
       : null
     const hasSearch = searchSet.current.size > 0
     const isHighlighted = (n) => {
+      if (selId) {
+        return n._id === selId || selNeighbors?.has(n._id)
+      }
       if (hovered) {
         return n._id === hovered._id || hoveredNeighbors?.has(n._id)
       }
@@ -198,7 +210,6 @@ function ForceGraph({
     }
 
     // Edges
-    ctx.lineWidth = 0.3
     edges.forEach((e) => {
       const s = e.source
       const tgt = e.target
@@ -208,29 +219,49 @@ function ForceGraph({
       const tHi = isHighlighted(tgt)
       const active = sHi && tHi
 
-      ctx.strokeStyle = active
-        ? 'rgba(255,255,255,0.15)'
-        : 'rgba(255,255,255,0.02)'
+      if (selId && active) {
+        ctx.strokeStyle = 'rgba(220,80,60,0.25)'
+        ctx.lineWidth = 0.3
+        ctx.shadowBlur = 0
+      } else if (active) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.15)'
+        ctx.lineWidth = 0.3
+        ctx.shadowBlur = 0
+      } else {
+        ctx.strokeStyle = 'rgba(255,255,255,0.02)'
+        ctx.lineWidth = 0.3
+        ctx.shadowBlur = 0
+      }
       ctx.beginPath()
       ctx.moveTo(s.x, s.y)
       ctx.lineTo(tgt.x, tgt.y)
       ctx.stroke()
     })
+    ctx.shadowBlur = 0
 
     // Nodes
     nodes.forEach((n) => {
       if (!n.x) return
       const hi = isHighlighted(n)
       const isHovered = hovered && n._id === hovered._id
-      const r = isHovered ? HOVER_RADIUS : NODE_RADIUS
+      const isSelected = selId && n._id === selId
+      const r = isSelected || isHovered ? HOVER_RADIUS : NODE_RADIUS
 
-      ctx.globalAlpha = hi ? 1 : 0.08
+      ctx.globalAlpha = hi ? 1 : 0.04
       ctx.fillStyle = getColor(n)
       ctx.beginPath()
       ctx.arc(n.x, n.y, r / t.k, 0, Math.PI * 2)
       ctx.fill()
 
-      if (isHovered) {
+      if (isSelected) {
+        ctx.shadowColor = getColor(n)
+        ctx.shadowBlur = 12 / t.k
+        ctx.strokeStyle = '#fff'
+        ctx.lineWidth = 1.5 / t.k
+        ctx.stroke()
+        ctx.shadowBlur = 0
+      }
+      if (isHovered && !isSelected) {
         ctx.strokeStyle = '#fff'
         ctx.lineWidth = 1.5 / t.k
         ctx.stroke()
@@ -283,11 +314,11 @@ function ForceGraph({
           .forceLink(edges)
           .id((d) => d._id)
           .distance(60)
-          .strength(0.3),
+          .strength(0.1),
       )
       .force('charge', d3.forceManyBody().strength(-30).distanceMax(300))
-      // Weak horizontal pull toward year position
-      .force('x', d3.forceX((d) => timeScale(d.year)).strength(0.15))
+      // Strong horizontal pull toward year position to maintain chronological order
+      .force('x', d3.forceX((d) => timeScale(d.year)).strength(0.8))
       // Vertical centering within the graph area (above the axis)
       .force('y', d3.forceY(graphHeight / 2).strength(0.05))
       .force('collision', d3.forceCollide(NODE_RADIUS + 1))
@@ -339,6 +370,27 @@ function ForceGraph({
       const my = event.clientY - rect.top
       const found = findNode(mx, my)
 
+      // When a node is selected, only allow hovering its neighbors
+      const selId = selectedIdRef.current
+      if (selId) {
+        const selNeighbors = adjMap.current.get(selId)?.neighbors
+        const isNeighbor =
+          found && (found._id === selId || selNeighbors?.has(found._id))
+        const allowed = isNeighbor ? found : null
+
+        if (allowed !== hoveredRef.current) {
+          hoveredRef.current = allowed
+          canvas.style.cursor = allowed ? 'pointer' : 'default'
+          if (allowed) {
+            setTooltip({ x: event.clientX, y: event.clientY, node: allowed })
+          } else {
+            setTooltip(null)
+          }
+          draw()
+        }
+        return
+      }
+
       if (found !== hoveredRef.current) {
         hoveredRef.current = found
         canvas.style.cursor = found ? 'pointer' : 'default'
@@ -361,7 +413,16 @@ function ForceGraph({
         event.clientX - rect.left,
         event.clientY - rect.top,
       )
-      if (found && onNodeClick) onNodeClick(found._id)
+      if (found && onNodeClick) {
+        onNodeClick(found._id)
+        hoveredRef.current = null
+        setTooltip(null)
+      } else if (!found && selectedIdRef.current && onNodeClick) {
+        // Click on empty space deselects
+        onNodeClick(selectedIdRef.current)
+        hoveredRef.current = null
+        setTooltip(null)
+      }
     }
 
     canvas.addEventListener('mousemove', handleMove)
@@ -393,10 +454,10 @@ function ForceGraph({
     }
   }, [nodes, edges, draw, onNodeClick, timeExtent, buildTimeScale])
 
-  // Redraw when colorBy or search changes (no sim restart needed)
+  // Redraw when colorBy, search, or selection changes (no sim restart needed)
   useEffect(() => {
     draw()
-  }, [colorBy, searchTerm, draw])
+  }, [colorBy, searchTerm, selectedId, draw])
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>

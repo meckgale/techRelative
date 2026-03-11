@@ -59,16 +59,21 @@ export function useStats() {
 
 export function useTechDetail(id) {
   const [tech, setTech] = useState(null);
+  const [relations, setRelations] = useState([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!id) { setTech(null); return; }
+    if (!id) { setTech(null); setRelations([]); return; }
     setLoading(true);
     fetch(`${API_BASE}/technologies/${id}`)
       .then(r => r.json())
-      .then(data => { setTech(data); setLoading(false); })
+      .then(data => {
+        setTech(data.technology);
+        setRelations(data.relations || []);
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
   }, [id]);
 
-  return { tech, loading };
+  return { tech, relations, loading };
 }

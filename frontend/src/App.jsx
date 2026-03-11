@@ -17,7 +17,7 @@ export default function App() {
   const { graphData, loading, error } = useGraphData(debouncedFilters)
 
   const handleNodeClick = useCallback((id) => {
-    setSelectedId(id)
+    setSelectedId((prev) => (prev === id ? null : id))
   }, [])
 
   return (
@@ -45,6 +45,7 @@ export default function App() {
             edges={graphData.edges}
             colorBy={colorBy}
             onNodeClick={handleNodeClick}
+            selectedId={selectedId}
             searchTerm={searchTerm}
           />
         </Suspense>

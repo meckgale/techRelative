@@ -18,7 +18,7 @@ interface SeedTechnology {
   category: string;
   tags: string[];
   description: string;
-  civilization: string;
+  region: string;
   person: string | null;
   see_also: string[];
 }
@@ -82,24 +82,20 @@ async function seed() {
     category: t.category,
     tags: t.tags,
     description: t.description,
-    civilization: t.civilization || null,
+    civilization: t.region || null,
     person: t.person || null,
-    seeAlso: t.see_also,
   }));
 
   const inserted = await Technology.insertMany(techDocs, { ordered: false });
   console.log(`  Inserted ${inserted.length} technologies`);
 
-  // ── Build lookup: name → ObjectId ──
-  // Some names may appear multiple times (different years), so we use
-  // name+year as key for relation resolution
+  // ── Build lookups from inserted docs ──
   const techByNameYear = new Map<string, mongoose.Types.ObjectId>();
   const techByName = new Map<string, mongoose.Types.ObjectId>();
 
   for (const doc of inserted) {
     const key = `${doc.name}::${doc.year}`;
     techByNameYear.set(key, doc._id);
-    // Also store by name alone (last one wins — used as fallback)
     techByName.set(doc.name, doc._id);
   }
 

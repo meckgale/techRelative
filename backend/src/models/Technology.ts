@@ -45,7 +45,6 @@ const technologySchema = new Schema(
     description: { type: String, default: "" },
     civilization: { type: String, default: null },
     person: { type: String, default: null },
-    seeAlso: { type: [String], default: [] },
   },
   { timestamps: true }
 );

@@ -20,15 +20,21 @@ export default function App() {
     setSelectedId((prev) => (prev === id ? null : id))
   }, [])
 
+  const handleFilterChange = useCallback((newFilters) => {
+    setFilters(newFilters)
+    setSelectedId(null)
+  }, [])
+
   return (
     <div className="app-layout">
       <Sidebar
         filters={filters}
-        onFilterChange={setFilters}
+        onFilterChange={handleFilterChange}
         colorBy={colorBy}
         onColorByChange={setColorBy}
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
+        onSelectTech={handleNodeClick}
         nodeCount={graphData.nodes.length}
         edgeCount={graphData.edges.length}
         loading={loading}

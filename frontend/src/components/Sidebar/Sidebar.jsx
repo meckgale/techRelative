@@ -1,8 +1,10 @@
+import { useState, useEffect, useRef } from 'react'
 import {
   ERAS,
   CATEGORIES,
   ERA_COLORS,
   CATEGORY_COLORS,
+  API_BASE,
 } from '../../utils/constants'
 
 export default function Sidebar({
@@ -12,10 +14,42 @@ export default function Sidebar({
   onColorByChange,
   searchTerm,
   onSearchChange,
+  onSelectTech,
   nodeCount,
   edgeCount,
   loading,
 }) {
+  const [searchResults, setSearchResults] = useState([])
+  const [searching, setSearching] = useState(false)
+  const debounceRef = useRef(null)
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+
+    if (searchTerm.length < 3) {
+      setSearchResults([])
+      return
+    }
+
+    debounceRef.current = setTimeout(async () => {
+      setSearching(true)
+      try {
+        const params = new URLSearchParams({ search: searchTerm, limit: '20' })
+        const res = await fetch(`${API_BASE}/technologies?${params}`)
+        if (res.ok) {
+          const data = await res.json()
+          setSearchResults(data.technologies)
+        }
+      } catch {
+        // silently fail — graph highlighting still works
+      } finally {
+        setSearching(false)
+      }
+    }, 300)
+
+    return () => clearTimeout(debounceRef.current)
+  }, [searchTerm])
+
   const handleEra = (era) => {
     onFilterChange({ ...filters, era: filters.era === era ? '' : era })
   }
@@ -27,6 +61,12 @@ export default function Sidebar({
   }
   const clearAll = () => {
     onFilterChange({ era: '', category: '' })
+    onSearchChange('')
+  }
+
+  const handleResultClick = (tech) => {
+    onSelectTech(tech._id)
+    setSearchResults([])
     onSearchChange('')
   }
 
@@ -59,6 +99,26 @@ export default function Sidebar({
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
         />
+        {searching && (
+          <div className="search-status">Searching…</div>
+        )}
+        {searchResults.length > 0 && (
+          <ul className="search-results">
+            {searchResults.map((tech) => (
+              <li key={tech._id}>
+                <button
+                  className="search-result-item"
+                  onClick={() => handleResultClick(tech)}
+                >
+                  <span className="search-result-name">{tech.name}</span>
+                  <span className="search-result-meta">
+                    {tech.yearDisplay} · {tech.category}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {/* Color by */}

@@ -11,7 +11,7 @@ export const ERA_COLORS = {
   Information: '#22B573',
 }
 
-// 19 categories — must match backend/src/models/Technology.ts CATEGORIES
+// 18 categories — must match backend/src/models/Technology.ts CATEGORIES
 export const CATEGORY_COLORS = {
   Anthropology: '#8D6E63',
   Archaeology: '#A1887F',
@@ -22,7 +22,6 @@ export const CATEGORY_COLORS = {
   Computers: '#1E88E5',
   Construction: '#78909C',
   'Earth science': '#546E7A',
-  'Ecology & the environment': '#26A69A',
   Electronics: '#AB47BC',
   Energy: '#FDD835',
   'Food & agriculture': '#7CB342',

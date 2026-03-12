@@ -22,7 +22,6 @@ const CATEGORIES = [
   "Computers",
   "Construction",
   "Earth science",
-  "Ecology & the environment",
   "Electronics",
   "Energy",
   "Food & agriculture",

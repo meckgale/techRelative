@@ -66,6 +66,42 @@ export function useStats() {
   return stats;
 }
 
+const personInitial = { person: null, contributions: [], loading: false, error: null };
+
+function personReducer(state, action) {
+  switch (action.type) {
+    case 'loading': return { ...state, loading: true, error: null };
+    case 'success': return { person: action.person, contributions: action.contributions, loading: false, error: null };
+    case 'error': return { ...state, loading: false, error: action.error };
+    default: return state;
+  }
+}
+
+export function usePersonDetail(name) {
+  const [state, dispatch] = useReducer(personReducer, personInitial);
+
+  useEffect(() => {
+    if (!name) return;
+    let cancelled = false;
+    dispatch({ type: 'loading' });
+    fetch(`${API_BASE}/persons/${encodeURIComponent(name)}`)
+      .then(r => {
+        if (!r.ok) throw new Error(`API ${r.status}`);
+        return r.json();
+      })
+      .then(data => {
+        if (!cancelled) dispatch({ type: 'success', person: data.person, contributions: data.contributions || [] });
+      })
+      .catch(err => {
+        if (!cancelled) dispatch({ type: 'error', error: err.message });
+      });
+    return () => { cancelled = true; };
+  }, [name]);
+
+  if (!name) return personInitial;
+  return state;
+}
+
 const detailInitial = { tech: null, relations: [], loading: false, error: null };
 
 export function useTechDetail(id) {

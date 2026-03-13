@@ -2,7 +2,7 @@ import { memo, useMemo, useEffect } from 'react'
 import { useTechDetail } from '../../hooks/useGraphData'
 import { ERA_COLORS, CATEGORY_COLORS } from '../../utils/constants'
 
-function TechDetail({ techId, onClose, onNavigate }) {
+function TechDetail({ techId, onClose, onNavigate, onPersonClick }) {
   const { tech, relations, loading, error } = useTechDetail(techId)
 
   // Extract unique neighbor technologies from relations
@@ -82,7 +82,12 @@ function TechDetail({ techId, onClose, onNavigate }) {
           {tech.person && (
             <div className="detail-field">
               <span className="detail-field-label">Person</span>
-              {tech.person}
+              <button
+                className="person-link"
+                onClick={() => onPersonClick(tech.person)}
+              >
+                {tech.person}
+              </button>
             </div>
           )}
 

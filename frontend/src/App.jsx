@@ -6,23 +6,40 @@ import './styles/app.css'
 
 const ForceGraph = lazy(() => import('./components/Graph/ForceGraph'))
 const TechDetail = lazy(() => import('./components/TechDetail/TechDetail'))
+const PersonDetail = lazy(() => import('./components/PersonDetail/PersonDetail'))
 
 export default function App() {
   const [filters, setFilters] = useState({ era: '', category: '' })
   const [colorBy, setColorBy] = useState('era')
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedId, setSelectedId] = useState(null)
+  const [selectedPerson, setSelectedPerson] = useState(null)
 
   const debouncedFilters = useDebounce(filters, 300)
   const { graphData, loading, error } = useGraphData(debouncedFilters)
 
   const handleNodeClick = useCallback((id) => {
     setSelectedId((prev) => (prev === id ? null : id))
+    setSelectedPerson(null)
   }, [])
 
   const handleFilterChange = useCallback((newFilters) => {
     setFilters(newFilters)
     setSelectedId(null)
+    setSelectedPerson(null)
+  }, [])
+
+  const handlePersonClick = useCallback((name) => {
+    setSelectedPerson(name)
+  }, [])
+
+  const handleBackToTech = useCallback(() => {
+    setSelectedPerson(null)
+  }, [])
+
+  const handlePersonNavigateTech = useCallback((techId) => {
+    setSelectedPerson(null)
+    setSelectedId(techId)
   }, [])
 
   return (
@@ -57,11 +74,21 @@ export default function App() {
         </Suspense>
 
         <Suspense fallback={<div>Loading details...</div>}>
-          <TechDetail
-            techId={selectedId}
-            onClose={() => setSelectedId(null)}
-            onNavigate={setSelectedId}
-          />
+          {selectedPerson ? (
+            <PersonDetail
+              personName={selectedPerson}
+              onClose={() => { setSelectedPerson(null); setSelectedId(null) }}
+              onNavigateTech={handlePersonNavigateTech}
+              onBack={selectedId ? handleBackToTech : null}
+            />
+          ) : (
+            <TechDetail
+              techId={selectedId}
+              onClose={() => setSelectedId(null)}
+              onNavigate={setSelectedId}
+              onPersonClick={handlePersonClick}
+            />
+          )}
         </Suspense>
       </main>
     </div>

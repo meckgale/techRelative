@@ -200,6 +200,63 @@ router.get("/stats", async (_req: Request, res: Response) => {
   }
 });
 
+// ── GET /api/persons/:name ─────────────────────────────────────────────
+// Aggregates all technologies by a person name to build a profile
+
+router.get("/persons/:name", async (req: Request, res: Response) => {
+  try {
+    const name = decodeURIComponent(req.params.name);
+
+    // Find all technologies where person field contains this name
+    const technologies = await Technology.find({
+      person: { $regex: name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" },
+    })
+      .sort({ year: 1 })
+      .lean();
+
+    if (technologies.length === 0) {
+      res.status(404).json({ error: "Person not found" });
+      return;
+    }
+
+    // Aggregate profile data from technologies
+    const years = technologies.map((t) => t.year);
+    const eras = [...new Set(technologies.map((t) => t.era))];
+    const categories = [...new Set(technologies.map((t) => t.category))];
+    const regions = [
+      ...new Set(technologies.map((t) => t.region).filter(Boolean)),
+    ];
+    const tags = [...new Set(technologies.flatMap((t) => t.tags || []))];
+
+    const contributions = technologies.map((t) => ({
+      _id: t._id,
+      name: t.name,
+      year: t.year,
+      yearDisplay: t.yearDisplay,
+      era: t.era,
+      category: t.category,
+      description: t.description,
+    }));
+
+    res.json({
+      person: {
+        name,
+        activeFrom: Math.min(...years),
+        activeTo: Math.max(...years),
+        eras,
+        categories,
+        regions,
+        tags,
+        contributionCount: technologies.length,
+      },
+      contributions,
+    });
+  } catch (err) {
+    console.error("GET /persons/:name error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // ── GET /api/biographies ──────────────────────────────────────────────
 
 router.get("/biographies", async (_req: Request, res: Response) => {

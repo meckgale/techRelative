@@ -22,7 +22,7 @@ const relationSchema = new Schema(
 
 relationSchema.index({ from: 1 });
 relationSchema.index({ to: 1 });
-relationSchema.index({ from: 1, to: 1 }, { unique: true });
+relationSchema.index({ from: 1, to: 1, type: 1 }, { unique: true });
 relationSchema.index({ type: 1 });
 
 export type RelationDocument = InferSchemaType<typeof relationSchema>;

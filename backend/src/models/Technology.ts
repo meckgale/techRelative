@@ -42,7 +42,7 @@ const technologySchema = new Schema(
     category: { type: String, required: true, enum: CATEGORIES, index: true },
     tags: { type: [String], default: [] },
     description: { type: String, default: "" },
-    civilization: { type: String, default: null },
+    region: { type: String, default: null },
     person: { type: String, default: null },
   },
   { timestamps: true }

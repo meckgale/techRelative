@@ -1,5 +1,14 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useReducer } from 'react';
 import { API_BASE } from '../utils/constants';
+
+function detailReducer(state, action) {
+  switch (action.type) {
+    case 'loading': return { ...state, loading: true, error: null };
+    case 'success': return { tech: action.tech, relations: action.relations, loading: false, error: null };
+    case 'error': return { ...state, loading: false, error: action.error };
+    default: return state;
+  }
+}
 
 export function useGraphData(filters) {
   const [graphData, setGraphData] = useState({ nodes: [], edges: [], meta: null });
@@ -57,23 +66,29 @@ export function useStats() {
   return stats;
 }
 
+const detailInitial = { tech: null, relations: [], loading: false, error: null };
+
 export function useTechDetail(id) {
-  const [tech, setTech] = useState(null);
-  const [relations, setRelations] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [state, dispatch] = useReducer(detailReducer, detailInitial);
 
   useEffect(() => {
-    if (!id) { setTech(null); setRelations([]); return; }
-    setLoading(true);
+    if (!id) return;
+    let cancelled = false;
+    dispatch({ type: 'loading' });
     fetch(`${API_BASE}/technologies/${id}`)
-      .then(r => r.json())
-      .then(data => {
-        setTech(data.technology);
-        setRelations(data.relations || []);
-        setLoading(false);
+      .then(r => {
+        if (!r.ok) throw new Error(`API ${r.status}`);
+        return r.json();
       })
-      .catch(() => setLoading(false));
+      .then(data => {
+        if (!cancelled) dispatch({ type: 'success', tech: data.technology, relations: data.relations || [] });
+      })
+      .catch(err => {
+        if (!cancelled) dispatch({ type: 'error', error: err.message });
+      });
+    return () => { cancelled = true; };
   }, [id]);
 
-  return { tech, relations, loading };
+  if (!id) return detailInitial;
+  return state;
 }

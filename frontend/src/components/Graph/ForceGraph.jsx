@@ -221,7 +221,7 @@ function ForceGraph({
 
       if (selId && active) {
         ctx.strokeStyle = 'rgba(220,80,60,0.25)'
-        ctx.lineWidth = 0.3
+        ctx.lineWidth = 0.5
         ctx.shadowBlur = 0
       } else if (active) {
         ctx.strokeStyle = 'rgba(255,255,255,0.15)'
@@ -465,6 +465,9 @@ function ForceGraph({
         ref={canvasRef}
         style={{ display: 'block', width: '100%', height: '100%' }}
       />
+      {nodes.length === 0 && (
+        <div className="graph-empty">No technologies match this filter</div>
+      )}
       {tooltip && (
         <div
           style={{
@@ -491,7 +494,7 @@ function ForceGraph({
             {tooltip.node.name}
           </div>
           <div style={{ color: '#aaa', fontSize: 11 }}>
-            {tooltip.node.yearDisplay || tooltip.node.year} · {tooltip.node.era}
+            {tooltip.node.yearDisplay} · {tooltip.node.era}
           </div>
           <div style={{ color: '#888', fontSize: 11 }}>
             {tooltip.node.category}

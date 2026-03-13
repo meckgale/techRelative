@@ -1,9 +1,9 @@
-import { memo, useMemo } from 'react'
+import { memo, useMemo, useEffect } from 'react'
 import { useTechDetail } from '../../hooks/useGraphData'
 import { ERA_COLORS, CATEGORY_COLORS } from '../../utils/constants'
 
 function TechDetail({ techId, onClose, onNavigate }) {
-  const { tech, relations, loading } = useTechDetail(techId)
+  const { tech, relations, loading, error } = useTechDetail(techId)
 
   // Extract unique neighbor technologies from relations
   const related = useMemo(() => {
@@ -20,6 +20,16 @@ function TechDetail({ techId, onClose, onNavigate }) {
     return result
   }, [techId, relations])
 
+  // Escape key closes the panel
+  useEffect(() => {
+    if (!techId) return
+    const handleKey = (e) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [techId, onClose])
+
   if (!techId) return null
 
   return (
@@ -29,6 +39,7 @@ function TechDetail({ techId, onClose, onNavigate }) {
       </button>
 
       {loading && <div className="loading-indicator">Loading…</div>}
+      {error && <div className="detail-error">Failed to load details</div>}
 
       {tech && (
         <>
@@ -55,16 +66,16 @@ function TechDetail({ techId, onClose, onNavigate }) {
             </span>
           </div>
 
-          <div className="detail-year">{tech.yearDisplay || tech.year}</div>
+          <div className="detail-year">{tech.yearDisplay}</div>
 
           {tech.description && (
             <p className="detail-desc">{tech.description}</p>
           )}
 
-          {tech.civilization && (
+          {tech.region && (
             <div className="detail-field">
               <span className="detail-field-label">Region</span>
-              {tech.civilization}
+              {tech.region}
             </div>
           )}
 

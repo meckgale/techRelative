@@ -1,11 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
+import { useStats } from '../../hooks/useGraphData'
 import {
-  ERAS,
-  CATEGORIES,
   ERA_COLORS,
   CATEGORY_COLORS,
   API_BASE,
 } from '../../utils/constants'
+
+const DEFAULT_ERAS = Object.keys(ERA_COLORS)
+const DEFAULT_CATEGORIES = Object.keys(CATEGORY_COLORS)
+const FALLBACK_COLOR = '#666'
 
 export default function Sidebar({
   filters,
@@ -19,8 +22,13 @@ export default function Sidebar({
   edgeCount,
   loading,
 }) {
+  const stats = useStats()
+  const eras = stats?.eras || DEFAULT_ERAS
+  const categories = stats?.categories || DEFAULT_CATEGORIES
+
   const [searchResults, setSearchResults] = useState([])
   const [searching, setSearching] = useState(false)
+  const [activeIdx, setActiveIdx] = useState(-1)
   const debounceRef = useRef(null)
 
   useEffect(() => {
@@ -28,6 +36,7 @@ export default function Sidebar({
 
     if (searchTerm.length < 3) {
       setSearchResults([])
+      setActiveIdx(-1)
       return
     }
 
@@ -68,6 +77,24 @@ export default function Sidebar({
     onSelectTech(tech._id)
     setSearchResults([])
     onSearchChange('')
+    setActiveIdx(-1)
+  }
+
+  const handleSearchKeyDown = (e) => {
+    if (!searchResults.length) return
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setActiveIdx((i) => (i < searchResults.length - 1 ? i + 1 : 0))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setActiveIdx((i) => (i > 0 ? i - 1 : searchResults.length - 1))
+    } else if (e.key === 'Enter' && activeIdx >= 0) {
+      e.preventDefault()
+      handleResultClick(searchResults[activeIdx])
+    } else if (e.key === 'Escape') {
+      setSearchResults([])
+      setActiveIdx(-1)
+    }
   }
 
   return (
@@ -98,16 +125,17 @@ export default function Sidebar({
           placeholder="Search technologies…"
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
+          onKeyDown={handleSearchKeyDown}
         />
         {searching && (
           <div className="search-status">Searching…</div>
         )}
         {searchResults.length > 0 && (
           <ul className="search-results">
-            {searchResults.map((tech) => (
+            {searchResults.map((tech, i) => (
               <li key={tech._id}>
                 <button
-                  className="search-result-item"
+                  className={`search-result-item ${i === activeIdx ? 'active' : ''}`}
                   onClick={() => handleResultClick(tech)}
                 >
                   <span className="search-result-name">{tech.name}</span>
@@ -141,7 +169,7 @@ export default function Sidebar({
       <div className="filter-section">
         <label className="filter-label">Era</label>
         <div className="chip-list">
-          {ERAS.map((era) => (
+          {eras.map((era) => (
             <button
               key={era}
               className={`chip ${filters.era === era ? 'active' : ''}`}
@@ -149,7 +177,7 @@ export default function Sidebar({
             >
               <span
                 className="chip-dot"
-                style={{ background: ERA_COLORS[era] }}
+                style={{ background: ERA_COLORS[era] || FALLBACK_COLOR }}
               />
               {era}
             </button>
@@ -161,7 +189,7 @@ export default function Sidebar({
       <div className="filter-section">
         <label className="filter-label">Category</label>
         <div className="chip-list">
-          {CATEGORIES.map((cat) => (
+          {categories.map((cat) => (
             <button
               key={cat}
               className={`chip ${filters.category === cat ? 'active' : ''}`}
@@ -169,7 +197,7 @@ export default function Sidebar({
             >
               <span
                 className="chip-dot"
-                style={{ background: CATEGORY_COLORS[cat] }}
+                style={{ background: CATEGORY_COLORS[cat] || FALLBACK_COLOR }}
               />
               {cat}
             </button>

@@ -1,4 +1,5 @@
 import { Router, type Request, type Response } from "express";
+import mongoose from "mongoose";
 import { Technology, ERAS, CATEGORIES } from "../models/Technology.js";
 import { Relation } from "../models/Relation.js";
 import { Biography } from "../models/Biography.js";
@@ -54,19 +55,49 @@ router.get("/technologies", async (req: Request, res: Response) => {
 
 router.get("/technologies/:id", async (req: Request, res: Response) => {
   try {
-    const tech = await Technology.findById(req.params.id).lean();
+    const techId = new mongoose.Types.ObjectId(req.params.id);
+
+    const tech = await Technology.findById(techId).lean();
     if (!tech) {
       res.status(404).json({ error: "Technology not found" });
       return;
     }
 
-    // Get relations involving this technology
-    const relations = await Relation.find({
-      $or: [{ from: tech._id }, { to: tech._id }],
-    })
-      .populate("from", "name year yearDisplay category")
-      .populate("to", "name year yearDisplay category")
-      .lean();
+    // Single aggregation with $lookup instead of N+1 populate calls
+    const relations = await Relation.aggregate([
+      { $match: { $or: [{ from: techId }, { to: techId }] } },
+      {
+        $lookup: {
+          from: "technologies",
+          localField: "from",
+          foreignField: "_id",
+          as: "fromTech",
+          pipeline: [
+            { $project: { name: 1, year: 1, yearDisplay: 1, category: 1 } },
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: "technologies",
+          localField: "to",
+          foreignField: "_id",
+          as: "toTech",
+          pipeline: [
+            { $project: { name: 1, year: 1, yearDisplay: 1, category: 1 } },
+          ],
+        },
+      },
+      {
+        $project: {
+          from: { $arrayElemAt: ["$fromTech", 0] },
+          to: { $arrayElemAt: ["$toTech", 0] },
+          type: 1,
+          fromYear: 1,
+          toYear: 1,
+        },
+      },
+    ]);
 
     res.json({ technology: tech, relations });
   } catch (err) {
@@ -95,7 +126,7 @@ router.get("/graph", async (req: Request, res: Response) => {
     }
 
     const technologies = await Technology.find(filter)
-      .select("name year yearDisplay era category civilization person")
+      .select("name year yearDisplay era category region person")
       .sort({ year: 1 })
       .lean();
 

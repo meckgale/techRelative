@@ -82,7 +82,7 @@ async function seed() {
     category: t.category,
     tags: t.tags,
     description: t.description,
-    civilization: t.region || null,
+    region: t.region || null,
     person: t.person || null,
   }));
 

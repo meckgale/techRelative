@@ -38,6 +38,16 @@ function PersonDetail({ personName, onClose, onNavigateTech, onBack }) {
 
       {person && (
         <>
+          {person.thumbnailUrl && (
+            <div className="person-thumb-wrap">
+              <img
+                className="person-thumb"
+                src={person.thumbnailUrl}
+                alt={person.name}
+              />
+            </div>
+          )}
+
           <h2 className="detail-name">{person.name}</h2>
 
           <div className="person-active-range">
@@ -93,6 +103,18 @@ function PersonDetail({ personName, onClose, onNavigateTech, onBack }) {
                   {t}
                 </span>
               ))}
+            </div>
+          )}
+
+          {person.wikipediaUrl && (
+            <div className="person-wiki-link">
+              <a
+                href={person.wikipediaUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Wikipedia →
+              </a>
             </div>
           )}
 

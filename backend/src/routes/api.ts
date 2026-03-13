@@ -2,6 +2,7 @@ import { Router, type Request, type Response } from "express";
 import mongoose from "mongoose";
 import { Technology, ERAS, CATEGORIES } from "../models/Technology.js";
 import { Relation } from "../models/Relation.js";
+import { Person } from "../models/Person.js";
 
 const router = Router();
 
@@ -204,12 +205,15 @@ router.get("/persons/:name", async (req: Request, res: Response) => {
   try {
     const name = decodeURIComponent(req.params.name);
 
-    // Find all technologies where person field contains this name
-    const technologies = await Technology.find({
-      person: { $regex: name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" },
-    })
-      .sort({ year: 1 })
-      .lean();
+    // Fetch technologies and stored Wikipedia data in parallel
+    const [technologies, personDoc] = await Promise.all([
+      Technology.find({
+        person: { $regex: name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" },
+      })
+        .sort({ year: 1 })
+        .lean(),
+      Person.findOne({ name }).lean(),
+    ]);
 
     if (technologies.length === 0) {
       res.status(404).json({ error: "Person not found" });
@@ -245,6 +249,8 @@ router.get("/persons/:name", async (req: Request, res: Response) => {
         regions,
         tags,
         contributionCount: technologies.length,
+        wikipediaUrl: personDoc?.wikipediaUrl || null,
+        thumbnailUrl: personDoc?.thumbnailUrl || null,
       },
       contributions,
     });

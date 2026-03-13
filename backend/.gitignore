@@ -2,4 +2,6 @@
 /node_modules
 data/seed_data.json
 data/seed_data_old.json
+data/persons_wiki.json
 scripts/normalize-persons.ts
+scripts/enrich-persons.ts

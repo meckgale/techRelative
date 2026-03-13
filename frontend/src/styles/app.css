@@ -500,6 +500,32 @@ body,
   opacity: 0.7;
 }
 
+/* ── Person thumbnail & Wikipedia link ─────────────────── */
+.person-thumb-wrap {
+  margin-bottom: 12px;
+}
+.person-thumb {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border);
+}
+
+.person-wiki-link {
+  margin-bottom: 14px;
+}
+.person-wiki-link a {
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--accent);
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+.person-wiki-link a:hover {
+  opacity: 0.7;
+}
+
 /* ── Graph empty state ─────────────────────────────────── */
 .graph-empty {
   position: absolute;

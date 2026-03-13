@@ -4,6 +4,7 @@ import { resolve } from "path";
 import dotenv from "dotenv";
 import { Technology } from "./models/Technology.js";
 import { Relation } from "./models/Relation.js";
+import { Person } from "./models/Person.js";
 
 dotenv.config();
 
@@ -59,6 +60,7 @@ async function seed() {
   console.log("Clearing existing data...");
   await Technology.deleteMany({});
   await Relation.deleteMany({});
+  await Person.deleteMany({});
 
   // ── Insert technologies ──
   console.log("Inserting technologies...");

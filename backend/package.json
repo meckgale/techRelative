@@ -7,7 +7,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "seed": "tsx src/seed.ts",
-    "normalize-persons": "tsx scripts/normalize-persons.ts"
+    "normalize-persons": "tsx scripts/normalize-persons.ts",
+    "enrich-persons": "tsx scripts/enrich-persons.ts"
   },
   "dependencies": {
     "compression": "^1.8.1",

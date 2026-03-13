@@ -2,7 +2,6 @@ import { Router, type Request, type Response } from "express";
 import mongoose from "mongoose";
 import { Technology, ERAS, CATEGORIES } from "../models/Technology.js";
 import { Relation } from "../models/Relation.js";
-import { Biography } from "../models/Biography.js";
 
 const router = Router();
 
@@ -170,11 +169,10 @@ router.get("/graph", async (req: Request, res: Response) => {
 
 router.get("/stats", async (_req: Request, res: Response) => {
   try {
-    const [techCount, relCount, bioCount, byEra, byCategory] =
+    const [techCount, relCount, byEra, byCategory] =
       await Promise.all([
         Technology.countDocuments(),
         Relation.countDocuments(),
-        Biography.countDocuments(),
         Technology.aggregate([
           { $group: { _id: "$era", count: { $sum: 1 } } },
           { $sort: { count: -1 } },
@@ -188,7 +186,6 @@ router.get("/stats", async (_req: Request, res: Response) => {
     res.json({
       technologies: techCount,
       relations: relCount,
-      biographies: bioCount,
       byEra: Object.fromEntries(byEra.map((e) => [e._id, e.count])),
       byCategory: Object.fromEntries(byCategory.map((c) => [c._id, c.count])),
       eras: ERAS,
@@ -257,16 +254,5 @@ router.get("/persons/:name", async (req: Request, res: Response) => {
   }
 });
 
-// ── GET /api/biographies ──────────────────────────────────────────────
-
-router.get("/biographies", async (_req: Request, res: Response) => {
-  try {
-    const biographies = await Biography.find().sort({ name: 1 }).lean();
-    res.json({ biographies });
-  } catch (err) {
-    console.error("GET /biographies error:", err);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
 
 export default router;

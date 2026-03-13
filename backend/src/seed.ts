@@ -4,7 +4,6 @@ import { resolve } from "path";
 import dotenv from "dotenv";
 import { Technology } from "./models/Technology.js";
 import { Relation } from "./models/Relation.js";
-import { Biography } from "./models/Biography.js";
 
 dotenv.config();
 
@@ -31,19 +30,9 @@ interface SeedRelation {
   to_year: number;
 }
 
-interface SeedBiography {
-  name: string;
-  birth_place: string;
-  birth_year: string;
-  death_place: string;
-  death_year: string;
-  raw_text: string;
-}
-
 interface SeedData {
   technologies: SeedTechnology[];
   relations: SeedRelation[];
-  biographies: SeedBiography[];
 }
 
 // ── Main ──────────────────────────────────────────────────────────────
@@ -60,7 +49,7 @@ async function seed() {
 
   console.log(`  Technologies: ${data.technologies.length}`);
   console.log(`  Relations:    ${data.relations.length}`);
-  console.log(`  Biographies:  ${data.biographies.length}`);
+
 
   console.log(`\nConnecting to: ${MONGO_URL}`);
   await mongoose.connect(MONGO_URL);
@@ -70,7 +59,6 @@ async function seed() {
   console.log("Clearing existing data...");
   await Technology.deleteMany({});
   await Relation.deleteMany({});
-  await Biography.deleteMany({});
 
   // ── Insert technologies ──
   console.log("Inserting technologies...");
@@ -149,25 +137,10 @@ async function seed() {
   }
   console.log(`  Resolved: ${resolved} | Unresolved: ${unresolved}`);
 
-  // ── Insert biographies ──
-  console.log("Inserting biographies...");
-  const bioDocs = data.biographies.map((b) => ({
-    name: b.name,
-    birthPlace: b.birth_place,
-    birthYear: b.birth_year,
-    deathPlace: b.death_place,
-    deathYear: b.death_year,
-    text: b.raw_text,
-  }));
-
-  const insertedBios = await Biography.insertMany(bioDocs);
-  console.log(`  Inserted ${insertedBios.length} biographies`);
-
   // ── Summary ──
   console.log("\n═══ Seed complete ═══");
   console.log(`  Technologies: ${inserted.length}`);
   console.log(`  Relations:    ${resolved}`);
-  console.log(`  Biographies:  ${insertedBios.length}`);
 
   await mongoose.disconnect();
 }

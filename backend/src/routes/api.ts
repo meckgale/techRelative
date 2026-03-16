@@ -261,4 +261,185 @@ router.get("/persons/:name", async (req: Request, res: Response) => {
 });
 
 
+// ── GET /api/persons-graph ─────────────────────────────────────────────
+// Returns person nodes + derived edges for graph rendering
+// Persons are aggregated from technologies; edges derived from tech relations
+
+router.get("/persons-graph", async (req: Request, res: Response) => {
+  try {
+    const { era, category } = req.query;
+
+    const filter: Record<string, any> = { person: { $nin: [null, ""] } };
+    if (era && typeof era === "string") filter.era = era;
+    if (category && typeof category === "string") filter.category = category;
+
+    // Cache
+    const cacheKey = "persons:" + JSON.stringify(filter);
+    const cached = graphCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return res.json(cached.data);
+    }
+
+    // 1. Get all technologies that have a person
+    const technologies = await Technology.find(filter)
+      .select("_id name year yearDisplay era category person")
+      .lean();
+
+    // 2. Aggregate persons from technologies
+    const personMap = new Map<
+      string,
+      {
+        years: number[];
+        eras: Map<string, number>;
+        categories: Map<string, number>;
+        techIds: Set<string>;
+      }
+    >();
+
+    const techToPersonMap = new Map<string, string>();
+
+    for (const tech of technologies) {
+      if (!tech.person) continue;
+      const name = tech.person;
+      const techId = tech._id.toString();
+
+      techToPersonMap.set(techId, name);
+
+      let entry = personMap.get(name);
+      if (!entry) {
+        entry = {
+          years: [],
+          eras: new Map(),
+          categories: new Map(),
+          techIds: new Set(),
+        };
+        personMap.set(name, entry);
+      }
+      entry.years.push(tech.year);
+      entry.eras.set(tech.era, (entry.eras.get(tech.era) || 0) + 1);
+      entry.categories.set(
+        tech.category,
+        (entry.categories.get(tech.category) || 0) + 1,
+      );
+      entry.techIds.add(techId);
+    }
+
+    // Build person nodes
+    const nodes = Array.from(personMap.entries()).map(([name, entry]) => {
+      const avgYear =
+        entry.years.reduce((a, b) => a + b, 0) / entry.years.length;
+      // Most frequent era and category for coloring
+      const era = [...entry.eras.entries()].sort((a, b) => b[1] - a[1])[0][0];
+      const cat = [...entry.categories.entries()].sort(
+        (a, b) => b[1] - a[1],
+      )[0][0];
+
+      return {
+        _id: name,
+        name,
+        year: Math.round(avgYear),
+        yearDisplay: formatYear(Math.round(avgYear)),
+        era,
+        category: cat,
+        contributionCount: entry.years.length,
+      };
+    });
+
+    // 3. Derive person-to-person edges from tech relations
+    const allTechIds = technologies.map((t) => t._id);
+    const relations = await Relation.find({
+      from: { $in: allTechIds },
+      to: { $in: allTechIds },
+    }).lean();
+
+    const edgeMap = new Map<string, { source: string; target: string; weight: number }>();
+
+    for (const rel of relations) {
+      const fromPerson = techToPersonMap.get(rel.from.toString());
+      const toPerson = techToPersonMap.get(rel.to.toString());
+      if (!fromPerson || !toPerson || fromPerson === toPerson) continue;
+
+      // Canonical key (undirected)
+      const [a, b] = fromPerson < toPerson
+        ? [fromPerson, toPerson]
+        : [toPerson, fromPerson];
+      const key = `${a}||${b}`;
+
+      const existing = edgeMap.get(key);
+      if (existing) {
+        existing.weight++;
+      } else {
+        edgeMap.set(key, { source: a, target: b, weight: 1 });
+      }
+    }
+
+    const edgesArr = Array.from(edgeMap.values());
+
+    const data = {
+      nodes,
+      edges: edgesArr,
+      meta: {
+        nodeCount: nodes.length,
+        edgeCount: edgesArr.length,
+      },
+    };
+
+    graphCache.set(cacheKey, { data, timestamp: Date.now() });
+    res.json(data);
+  } catch (err) {
+    console.error("GET /persons-graph error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+function formatYear(year: number): string {
+  if (year <= 0) return `${Math.abs(year)} BCE`;
+  return `${year} CE`;
+}
+
+// ── GET /api/persons-search ───────────────────────────────────────────
+// Search persons by name, returns deduplicated list
+
+router.get("/persons-search", async (req: Request, res: Response) => {
+  try {
+    const { search, limit = "20" } = req.query;
+    if (!search || typeof search !== "string" || search.length < 2) {
+      return res.json({ persons: [] });
+    }
+
+    const limitNum = Math.min(50, Math.max(1, parseInt(String(limit))));
+    const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+    const results = await Technology.aggregate([
+      { $match: { person: { $regex: escaped, $options: "i" } } },
+      {
+        $group: {
+          _id: "$person",
+          contributionCount: { $sum: 1 },
+          era: { $first: "$era" },
+          category: { $first: "$category" },
+          yearDisplay: { $first: "$yearDisplay" },
+        },
+      },
+      { $sort: { contributionCount: -1 } },
+      { $limit: limitNum },
+      {
+        $project: {
+          _id: 0,
+          name: "$_id",
+          contributionCount: 1,
+          era: 1,
+          category: 1,
+          yearDisplay: 1,
+        },
+      },
+    ]);
+
+    res.json({ persons: results });
+  } catch (err) {
+    console.error("GET /persons-search error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 export default router;

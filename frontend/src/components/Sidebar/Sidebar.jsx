@@ -18,9 +18,12 @@ export default function Sidebar({
   searchTerm,
   onSearchChange,
   onSelectTech,
+  onSelectPerson,
   nodeCount,
   edgeCount,
   loading,
+  viewMode = 'technology',
+  onViewModeChange,
 }) {
   const stats = useStats()
   const eras = stats?.eras || DEFAULT_ERAS
@@ -44,10 +47,13 @@ export default function Sidebar({
       setSearching(true)
       try {
         const params = new URLSearchParams({ search: searchTerm, limit: '20' })
-        const res = await fetch(`${API_BASE}/technologies?${params}`)
+        const url = viewMode === 'person'
+          ? `${API_BASE}/persons-search?${params}`
+          : `${API_BASE}/technologies?${params}`
+        const res = await fetch(url)
         if (res.ok) {
           const data = await res.json()
-          setSearchResults(data.technologies)
+          setSearchResults(viewMode === 'person' ? data.persons : data.technologies)
         }
       } catch {
         // silently fail — graph highlighting still works
@@ -57,7 +63,7 @@ export default function Sidebar({
     }, 300)
 
     return () => clearTimeout(debounceRef.current)
-  }, [searchTerm])
+  }, [searchTerm, viewMode])
 
   const handleEra = (era) => {
     onFilterChange({ ...filters, era: filters.era === era ? '' : era })
@@ -73,8 +79,12 @@ export default function Sidebar({
     onSearchChange('')
   }
 
-  const handleResultClick = (tech) => {
-    onSelectTech(tech._id)
+  const handleResultClick = (item) => {
+    if (viewMode === 'person') {
+      onSelectPerson(item.name)
+    } else {
+      onSelectTech(item._id)
+    }
     setSearchResults([])
     onSearchChange('')
     setActiveIdx(-1)
@@ -108,7 +118,7 @@ export default function Sidebar({
             <span className="meta-count-highlight">
               {nodeCount.toLocaleString()}
             </span>{' '}
-            nodes ·{' '}
+            {viewMode === 'person' ? 'persons' : 'nodes'} ·{' '}
             <span className="meta-count-highlight">
               {edgeCount.toLocaleString()}
             </span>{' '}
@@ -117,12 +127,28 @@ export default function Sidebar({
         )}
       </div>
 
+      {/* View mode toggle */}
+      <div className="filter-section">
+        <label className="filter-label">View</label>
+        <div className="toggle-group">
+          {['technology', 'person'].map((v) => (
+            <button
+              key={v}
+              className={`toggle-btn ${viewMode === v ? 'active' : ''}`}
+              onClick={() => onViewModeChange(v)}
+            >
+              {v === 'technology' ? 'tech' : 'person'}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Search */}
       <div className="filter-section">
         <input
           type="text"
           className="search-input"
-          placeholder="Search technologies…"
+          placeholder={viewMode === 'person' ? 'Search persons…' : 'Search technologies…'}
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
           onKeyDown={handleSearchKeyDown}
@@ -132,15 +158,17 @@ export default function Sidebar({
         )}
         {searchResults.length > 0 && (
           <ul className="search-results">
-            {searchResults.map((tech, i) => (
-              <li key={tech._id}>
+            {searchResults.map((item, i) => (
+              <li key={viewMode === 'person' ? item.name : item._id}>
                 <button
                   className={`search-result-item ${i === activeIdx ? 'active' : ''}`}
-                  onClick={() => handleResultClick(tech)}
+                  onClick={() => handleResultClick(item)}
                 >
-                  <span className="search-result-name">{tech.name}</span>
+                  <span className="search-result-name">{item.name}</span>
                   <span className="search-result-meta">
-                    {tech.yearDisplay} · {tech.category}
+                    {viewMode === 'person'
+                      ? `${item.contributionCount} contributions · ${item.category}`
+                      : `${item.yearDisplay} · ${item.category}`}
                   </span>
                 </button>
               </li>

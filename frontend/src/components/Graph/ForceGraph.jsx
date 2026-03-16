@@ -20,6 +20,8 @@ function ForceGraph({
   onNodeClick,
   selectedId = null,
   searchTerm = '',
+  viewMode = 'technology',
+  loading = false,
 }) {
   const canvasRef = useRef(null)
   const simRef = useRef(null)
@@ -27,6 +29,8 @@ function ForceGraph({
   const hoveredRef = useRef(null)
   const selectedIdRef = useRef(null)
   const timeScaleRef = useRef(null)
+  const drawRef = useRef(null)
+  const quadtreeRef = useRef(null)
   const [tooltip, setTooltip] = useState(null)
 
   // ─── TIME SCALE ───────────────────────────────────────────
@@ -240,18 +244,32 @@ function ForceGraph({
     ctx.shadowBlur = 0
 
     // Nodes
+    const isPerson = viewMode === 'person'
     nodes.forEach((n) => {
       if (!n.x) return
       const hi = isHighlighted(n)
       const isHovered = hovered && n._id === hovered._id
       const isSelected = selId && n._id === selId
       const r = isSelected || isHovered ? HOVER_RADIUS : NODE_RADIUS
+      const sr = r / t.k // screen-space radius
 
       ctx.globalAlpha = hi ? 1 : 0.04
       ctx.fillStyle = getColor(n)
-      ctx.beginPath()
-      ctx.arc(n.x, n.y, r / t.k, 0, Math.PI * 2)
-      ctx.fill()
+
+      if (isPerson) {
+        // Diamond shape for person nodes
+        ctx.beginPath()
+        ctx.moveTo(n.x, n.y - sr * 1.2)
+        ctx.lineTo(n.x + sr, n.y)
+        ctx.lineTo(n.x, n.y + sr * 1.2)
+        ctx.lineTo(n.x - sr, n.y)
+        ctx.closePath()
+        ctx.fill()
+      } else {
+        ctx.beginPath()
+        ctx.arc(n.x, n.y, sr, 0, Math.PI * 2)
+        ctx.fill()
+      }
 
       if (isSelected) {
         ctx.shadowColor = getColor(n)
@@ -284,7 +302,13 @@ function ForceGraph({
     }
 
     ctx.restore()
-  }, [nodes, edges, getColor, visibleEras, timeExtent])
+  }, [nodes, edges, getColor, visibleEras, timeExtent, viewMode])
+
+  // Keep draw in a ref so the simulation can call the latest version
+  // without draw being a dependency of the simulation effect
+  useEffect(() => {
+    drawRef.current = draw
+  }, [draw])
 
   // ─── SIMULATION ─────────────────────────────────────────────
   useEffect(() => {
@@ -322,16 +346,18 @@ function ForceGraph({
       // Vertical centering within the graph area (above the axis)
       .force('y', d3.forceY(graphHeight / 2).strength(0.05))
       .force('collision', d3.forceCollide(NODE_RADIUS + 1))
-      .alphaDecay(0.02)
+      .alphaDecay(0.03)
       .velocityDecay(0.4)
 
     let tickCount = 0
     sim.on('tick', () => {
       tickCount++
-      if (tickCount > 300 || sim.alpha() < 0.01) {
+      if (tickCount > 150 || sim.alpha() < 0.01) {
         sim.stop()
+        // Build quadtree once after simulation settles
+        rebuildQuadtree()
       }
-      draw()
+      drawRef.current?.()
     })
 
     simRef.current = sim
@@ -342,26 +368,28 @@ function ForceGraph({
       .scaleExtent([0.1, 8])
       .on('zoom', (event) => {
         transformRef.current = event.transform
-        draw()
+        drawRef.current?.()
       })
 
     const sel = d3.select(canvas)
     sel.call(zoom)
 
     // ─── MOUSE INTERACTION ──────────────────────────────────
-    const quadtree = d3
-      .quadtree()
-      .x((d) => d.x)
-      .y((d) => d.y)
+    const rebuildQuadtree = () => {
+      quadtreeRef.current = d3
+        .quadtree()
+        .x((d) => d.x)
+        .y((d) => d.y)
+        .addAll(nodes.filter((n) => n.x !== undefined))
+    }
 
     const findNode = (mx, my) => {
+      if (!quadtreeRef.current) return null
       const t = transformRef.current
       const x = (mx - t.x) / t.k
       const y = (my - t.y) / t.k
       const radius = 12 / t.k
-      quadtree.removeAll(quadtree.data())
-      quadtree.addAll(nodes.filter((n) => n.x !== undefined))
-      return quadtree.find(x, y, radius)
+      return quadtreeRef.current.find(x, y, radius)
     }
 
     const handleMove = (event) => {
@@ -386,7 +414,7 @@ function ForceGraph({
           } else {
             setTooltip(null)
           }
-          draw()
+          drawRef.current?.()
         }
         return
       }
@@ -403,7 +431,7 @@ function ForceGraph({
         } else {
           setTooltip(null)
         }
-        draw()
+        drawRef.current?.()
       }
     }
 
@@ -452,7 +480,7 @@ function ForceGraph({
       canvas.removeEventListener('click', handleClick)
       resizeObs.disconnect()
     }
-  }, [nodes, edges, draw, onNodeClick, timeExtent, buildTimeScale])
+  }, [nodes, edges, onNodeClick, timeExtent, buildTimeScale])
 
   // Redraw when colorBy, search, or selection changes (no sim restart needed)
   useEffect(() => {
@@ -465,8 +493,12 @@ function ForceGraph({
         ref={canvasRef}
         style={{ display: 'block', width: '100%', height: '100%' }}
       />
-      {nodes.length === 0 && (
-        <div className="graph-empty">No technologies match this filter</div>
+      {nodes.length === 0 && !loading && (
+        <div className="graph-empty">
+          {viewMode === 'person'
+            ? 'No persons match this filter'
+            : 'No technologies match this filter'}
+        </div>
       )}
       {tooltip && (
         <div
@@ -498,6 +530,8 @@ function ForceGraph({
           </div>
           <div style={{ color: '#888', fontSize: 11 }}>
             {tooltip.node.category}
+            {tooltip.node.contributionCount != null &&
+              ` · ${tooltip.node.contributionCount} contributions`}
           </div>
         </div>
       )}

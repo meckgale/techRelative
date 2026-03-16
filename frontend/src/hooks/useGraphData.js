@@ -10,17 +10,20 @@ function detailReducer(state, action) {
   }
 }
 
-export function useGraphData(filters) {
+export function useGraphData(filters, mode = 'technology') {
   const [graphData, setGraphData] = useState({ nodes: [], edges: [], meta: null });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const abortRef = useRef(null);
+
+  const endpoint = mode === 'person' ? 'persons-graph' : 'graph';
 
   const fetchGraph = useCallback(async () => {
     if (abortRef.current) abortRef.current.abort();
     const controller = new AbortController();
     abortRef.current = controller;
 
+    setGraphData({ nodes: [], edges: [], meta: null });
     setLoading(true);
     setError(null);
 
@@ -29,21 +32,21 @@ export function useGraphData(filters) {
     if (filters.category) params.set('category', filters.category);
 
     try {
-      const res = await fetch(`${API_BASE}/graph?${params}`, {
+      const res = await fetch(`${API_BASE}/${endpoint}?${params}`, {
         signal: controller.signal,
       });
       if (!res.ok) throw new Error(`API ${res.status}`);
       const data = await res.json();
       setGraphData(data);
+      setLoading(false);
     } catch (err) {
       if (err.name !== 'AbortError') {
         setError(err.message);
+        setLoading(false);
         console.error('Graph fetch failed:', err);
       }
-    } finally {
-      setLoading(false);
     }
-  }, [filters.era, filters.category]);
+  }, [filters.era, filters.category, endpoint]);
 
   useEffect(() => {
     fetchGraph();

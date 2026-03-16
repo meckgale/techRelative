@@ -14,14 +14,20 @@ export default function App() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedId, setSelectedId] = useState(null)
   const [selectedPerson, setSelectedPerson] = useState(null)
+  const [viewMode, setViewMode] = useState('technology')
 
   const debouncedFilters = useDebounce(filters, 300)
-  const { graphData, loading, error } = useGraphData(debouncedFilters)
+  const { graphData, loading, error } = useGraphData(debouncedFilters, viewMode)
 
   const handleNodeClick = useCallback((id) => {
-    setSelectedId((prev) => (prev === id ? null : id))
-    setSelectedPerson(null)
-  }, [])
+    if (viewMode === 'person') {
+      setSelectedPerson((prev) => (prev === id ? null : id))
+      setSelectedId(null)
+    } else {
+      setSelectedId((prev) => (prev === id ? null : id))
+      setSelectedPerson(null)
+    }
+  }, [viewMode])
 
   const handleFilterChange = useCallback((newFilters) => {
     setFilters(newFilters)
@@ -42,6 +48,13 @@ export default function App() {
     setSelectedId(techId)
   }, [])
 
+  const handleViewModeChange = useCallback((mode) => {
+    setViewMode(mode)
+    setSelectedId(null)
+    setSelectedPerson(null)
+    setSearchTerm('')
+  }, [])
+
   return (
     <div className="app-layout">
       <Sidebar
@@ -52,9 +65,12 @@ export default function App() {
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         onSelectTech={handleNodeClick}
+        onSelectPerson={handlePersonClick}
         nodeCount={graphData.nodes.length}
         edgeCount={graphData.edges.length}
         loading={loading}
+        viewMode={viewMode}
+        onViewModeChange={handleViewModeChange}
       />
 
       <main className="graph-container">
@@ -68,8 +84,10 @@ export default function App() {
             edges={graphData.edges}
             colorBy={colorBy}
             onNodeClick={handleNodeClick}
-            selectedId={selectedId}
+            selectedId={viewMode === 'person' ? selectedPerson : selectedId}
             searchTerm={searchTerm}
+            viewMode={viewMode}
+            loading={loading}
           />
         </Suspense>
 

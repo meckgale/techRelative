@@ -25,9 +25,9 @@ type DetailAction =
   | { type: 'success'; tech: TechDetailData; relations: RelationData[] }
   | { type: 'error'; error: string }
 
-const detailInitial: DetailState = { tech: null, relations: [], loading: false, error: null }
+export const detailInitial: DetailState = { tech: null, relations: [], loading: false, error: null }
 
-function detailReducer(state: DetailState, action: DetailAction): DetailState {
+export function detailReducer(state: DetailState, action: DetailAction): DetailState {
   switch (action.type) {
     case 'loading': return { ...state, loading: true, error: null }
     case 'success': return { tech: action.tech, relations: action.relations, loading: false, error: null }
@@ -49,9 +49,9 @@ type PersonAction =
   | { type: 'success'; person: PersonDetailData; contributions: ContributionData[] }
   | { type: 'error'; error: string }
 
-const personInitial: PersonState = { person: null, contributions: [], loading: false, error: null }
+export const personInitial: PersonState = { person: null, contributions: [], loading: false, error: null }
 
-function personReducer(state: PersonState, action: PersonAction): PersonState {
+export function personReducer(state: PersonState, action: PersonAction): PersonState {
   switch (action.type) {
     case 'loading': return { ...state, loading: true, error: null }
     case 'success': return { person: action.person, contributions: action.contributions, loading: false, error: null }

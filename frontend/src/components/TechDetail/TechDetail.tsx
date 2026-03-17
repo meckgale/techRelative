@@ -1,15 +1,28 @@
 import { memo, useMemo, useEffect } from 'react'
 import { useTechDetail } from '../../hooks/useGraphData'
 import { ERA_COLORS, CATEGORY_COLORS } from '../../utils/constants'
+import type { Era, Category } from '../../types'
 
-function TechDetail({ techId, onClose, onNavigate, onPersonClick }) {
+interface TechDetailProps {
+  techId: string | null
+  onClose: () => void
+  onNavigate: (id: string) => void
+  onPersonClick: (name: string) => void
+}
+
+interface RelatedNode {
+  _id: string
+  name: string
+}
+
+function TechDetail({ techId, onClose, onNavigate, onPersonClick }: TechDetailProps) {
   const { tech, relations, loading, error } = useTechDetail(techId)
 
   // Extract unique neighbor technologies from relations
   const related = useMemo(() => {
-    if (!techId || !relations.length) return []
-    const seen = new Set()
-    const result = []
+    if (!techId || !relations.length) return [] as RelatedNode[]
+    const seen = new Set<string>()
+    const result: RelatedNode[] = []
     for (const r of relations) {
       const other = r.from?._id === techId ? r.to : r.from
       if (other && !seen.has(other._id)) {
@@ -23,7 +36,7 @@ function TechDetail({ techId, onClose, onNavigate, onPersonClick }) {
   // Escape key closes the panel
   useEffect(() => {
     if (!techId) return
-    const handleKey = (e) => {
+    const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
     }
     window.addEventListener('keydown', handleKey)
@@ -49,8 +62,8 @@ function TechDetail({ techId, onClose, onNavigate, onPersonClick }) {
             <span
               className="detail-badge"
               style={{
-                background: ERA_COLORS[tech.era] + '22',
-                color: ERA_COLORS[tech.era],
+                background: ERA_COLORS[tech.era as Era] + '22',
+                color: ERA_COLORS[tech.era as Era],
               }}
             >
               {tech.era}
@@ -58,8 +71,8 @@ function TechDetail({ techId, onClose, onNavigate, onPersonClick }) {
             <span
               className="detail-badge"
               style={{
-                background: CATEGORY_COLORS[tech.category] + '22',
-                color: CATEGORY_COLORS[tech.category],
+                background: CATEGORY_COLORS[tech.category as Category] + '22',
+                color: CATEGORY_COLORS[tech.category as Category],
               }}
             >
               {tech.category}
@@ -84,7 +97,7 @@ function TechDetail({ techId, onClose, onNavigate, onPersonClick }) {
               <span className="detail-field-label">Person</span>
               <button
                 className="person-link"
-                onClick={() => onPersonClick(tech.person)}
+                onClick={() => onPersonClick(tech.person!)}
               >
                 {tech.person}
               </button>

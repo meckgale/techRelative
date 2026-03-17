@@ -1,18 +1,26 @@
 import { memo, useEffect } from 'react'
 import { usePersonDetail } from '../../hooks/useGraphData'
 import { ERA_COLORS, CATEGORY_COLORS } from '../../utils/constants'
+import type { Era, Category } from '../../types'
 
-function formatYear(year) {
+interface PersonDetailProps {
+  personName: string | null
+  onClose: () => void
+  onNavigateTech: (id: string) => void
+  onBack: (() => void) | null
+}
+
+function formatYear(year: number): string {
   if (year < 0) return `${Math.abs(year).toLocaleString()} BCE`
   return `${year} CE`
 }
 
-function PersonDetail({ personName, onClose, onNavigateTech, onBack }) {
+function PersonDetail({ personName, onClose, onNavigateTech, onBack }: PersonDetailProps) {
   const { person, contributions, loading, error } = usePersonDetail(personName)
 
   useEffect(() => {
     if (!personName) return
-    const handleKey = (e) => {
+    const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
     }
     window.addEventListener('keydown', handleKey)
@@ -62,8 +70,8 @@ function PersonDetail({ personName, onClose, onNavigateTech, onBack }) {
                 key={era}
                 className="detail-badge"
                 style={{
-                  background: ERA_COLORS[era] + '22',
-                  color: ERA_COLORS[era],
+                  background: ERA_COLORS[era as Era] + '22',
+                  color: ERA_COLORS[era as Era],
                 }}
               >
                 {era}
@@ -79,8 +87,8 @@ function PersonDetail({ personName, onClose, onNavigateTech, onBack }) {
                   key={cat}
                   className="detail-badge"
                   style={{
-                    background: CATEGORY_COLORS[cat] + '22',
-                    color: CATEGORY_COLORS[cat],
+                    background: CATEGORY_COLORS[cat as Category] + '22',
+                    color: CATEGORY_COLORS[cat as Category],
                   }}
                 >
                   {cat}
@@ -135,7 +143,7 @@ function PersonDetail({ personName, onClose, onNavigateTech, onBack }) {
                   <span className="person-contribution-name">{c.name}</span>
                   <span
                     className="person-contribution-cat"
-                    style={{ color: CATEGORY_COLORS[c.category] }}
+                    style={{ color: CATEGORY_COLORS[c.category as Category] }}
                   >
                     {c.category}
                   </span>

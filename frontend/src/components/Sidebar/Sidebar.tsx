@@ -3,12 +3,40 @@ import { useStats } from '../../hooks/useGraphData'
 import {
   ERA_COLORS,
   CATEGORY_COLORS,
+  ERAS,
+  CATEGORIES,
   API_BASE,
 } from '../../utils/constants'
+import type {
+  Era,
+  Category,
+  Filters,
+  ViewMode,
+  ColorBy,
+  SearchResultTech,
+  SearchResultPerson,
+} from '../../types'
 
-const DEFAULT_ERAS = Object.keys(ERA_COLORS)
-const DEFAULT_CATEGORIES = Object.keys(CATEGORY_COLORS)
 const FALLBACK_COLOR = '#666'
+
+type SearchResult = SearchResultTech | SearchResultPerson
+
+interface SidebarProps {
+  filters: Filters
+  onFilterChange: (filters: Filters) => void
+  colorBy: ColorBy
+  onColorByChange: (colorBy: ColorBy) => void
+  searchTerm: string
+  onSearchChange: (term: string) => void
+  onSelectTech: (id: string) => void
+  onSelectPerson: (name: string) => void
+  nodeCount: number
+  edgeCount: number
+  loading: boolean
+  viewMode: ViewMode
+  onViewModeChange: (mode: ViewMode) => void
+  isOpen: boolean
+}
 
 export default function Sidebar({
   filters,
@@ -25,15 +53,15 @@ export default function Sidebar({
   viewMode = 'technology',
   onViewModeChange,
   isOpen = false,
-}) {
+}: SidebarProps) {
   const stats = useStats()
-  const eras = stats?.eras || DEFAULT_ERAS
-  const categories = stats?.categories || DEFAULT_CATEGORIES
+  const eras = stats?.eras || ERAS
+  const categories = stats?.categories || CATEGORIES
 
-  const [searchResults, setSearchResults] = useState([])
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [searching, setSearching] = useState(false)
   const [activeIdx, setActiveIdx] = useState(-1)
-  const debounceRef = useRef(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -63,13 +91,15 @@ export default function Sidebar({
       }
     }, 300)
 
-    return () => clearTimeout(debounceRef.current)
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
   }, [searchTerm, viewMode])
 
-  const handleEra = (era) => {
+  const handleEra = (era: Era) => {
     onFilterChange({ ...filters, era: filters.era === era ? '' : era })
   }
-  const handleCategory = (cat) => {
+  const handleCategory = (cat: Category) => {
     onFilterChange({
       ...filters,
       category: filters.category === cat ? '' : cat,
@@ -80,18 +110,18 @@ export default function Sidebar({
     onSearchChange('')
   }
 
-  const handleResultClick = (item) => {
+  const handleResultClick = (item: SearchResult) => {
     if (viewMode === 'person') {
       onSelectPerson(item.name)
     } else {
-      onSelectTech(item._id)
+      onSelectTech((item as SearchResultTech)._id)
     }
     setSearchResults([])
     onSearchChange('')
     setActiveIdx(-1)
   }
 
-  const handleSearchKeyDown = (e) => {
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
     if (!searchResults.length) return
     if (e.key === 'ArrowDown') {
       e.preventDefault()
@@ -132,7 +162,7 @@ export default function Sidebar({
       <div className="filter-section">
         <label className="filter-label">View</label>
         <div className="toggle-group">
-          {['technology', 'person'].map((v) => (
+          {(['technology', 'person'] as const).map((v) => (
             <button
               key={v}
               className={`toggle-btn ${viewMode === v ? 'active' : ''}`}
@@ -160,7 +190,7 @@ export default function Sidebar({
         {searchResults.length > 0 && (
           <ul className="search-results">
             {searchResults.map((item, i) => (
-              <li key={viewMode === 'person' ? item.name : item._id}>
+              <li key={viewMode === 'person' ? item.name : (item as SearchResultTech)._id}>
                 <button
                   className={`search-result-item ${i === activeIdx ? 'active' : ''}`}
                   onClick={() => handleResultClick(item)}
@@ -168,8 +198,8 @@ export default function Sidebar({
                   <span className="search-result-name">{item.name}</span>
                   <span className="search-result-meta">
                     {viewMode === 'person'
-                      ? `${item.contributionCount} contributions · ${item.category}`
-                      : `${item.yearDisplay} · ${item.category}`}
+                      ? `${(item as SearchResultPerson).contributionCount} contributions · ${item.category}`
+                      : `${(item as SearchResultTech).yearDisplay} · ${item.category}`}
                   </span>
                 </button>
               </li>
@@ -182,7 +212,7 @@ export default function Sidebar({
       <div className="filter-section">
         <label className="filter-label">Color by</label>
         <div className="toggle-group">
-          {['era', 'category'].map((v) => (
+          {(['era', 'category'] as const).map((v) => (
             <button
               key={v}
               className={`toggle-btn ${colorBy === v ? 'active' : ''}`}

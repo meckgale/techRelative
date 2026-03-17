@@ -1,5 +1,7 @@
+import type { Era, Category, EraBoundary } from '../types'
+
 // 9 eras — must match backend/src/models/Technology.ts ERAS
-export const ERA_COLORS = {
+export const ERA_COLORS: Record<Era, string> = {
   Prehistoric: '#A67C52',
   Neolithic: '#C9A84C',
   Ancient: '#D4883E',
@@ -12,7 +14,7 @@ export const ERA_COLORS = {
 }
 
 // 18 categories — must match backend/src/models/Technology.ts CATEGORIES
-export const CATEGORY_COLORS = {
+export const CATEGORY_COLORS: Record<Category, string> = {
   Anthropology: '#8D6E63',
   Archaeology: '#A1887F',
   Astronomy: '#5C6BC0',
@@ -33,12 +35,12 @@ export const CATEGORY_COLORS = {
   Transportation: '#0097A7',
 }
 
-export const ERAS = Object.keys(ERA_COLORS)
-export const CATEGORIES = Object.keys(CATEGORY_COLORS)
+export const ERAS = Object.keys(ERA_COLORS) as Era[]
+export const CATEGORIES = Object.keys(CATEGORY_COLORS) as Category[]
 
 // Approximate era boundaries (start year) for timeline rendering
 // Negative = BCE, positive = CE
-export const ERA_BOUNDARIES = [
+export const ERA_BOUNDARIES: EraBoundary[] = [
   { era: 'Prehistoric', start: -3000000, end: -10000 },
   { era: 'Neolithic', start: -10000, end: -3000 },
   { era: 'Ancient', start: -3000, end: -800 },

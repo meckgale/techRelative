@@ -6,6 +6,7 @@ import {
   CATEGORY_COLORS,
   ERA_BOUNDARIES,
 } from '../../utils/constants'
+import type { GraphNode, GraphEdge, ColorBy, ViewMode, Era, EraBoundary } from '../../types'
 
 const NODE_RADIUS = 4
 const HOVER_RADIUS = 8
@@ -13,6 +14,29 @@ const LABEL_THRESHOLD = 1.4
 const AXIS_SIZE = 36 // px reserved for the era axis (bottom in landscape, left in portrait)
 const TIMELINE_PADDING = 60 // px margin along the timeline axis
 const MOBILE_QUERY = '(max-width: 768px)'
+
+interface AdjEntry {
+  node: GraphNode
+  neighbors: Set<string>
+  edges: GraphEdge[]
+}
+
+interface TooltipState {
+  x: number
+  y: number
+  node: GraphNode
+}
+
+interface ForceGraphProps {
+  nodes: GraphNode[]
+  edges: GraphEdge[]
+  colorBy?: ColorBy
+  onNodeClick?: (id: string) => void
+  selectedId?: string | null
+  searchTerm?: string
+  viewMode?: ViewMode
+  loading?: boolean
+}
 
 function ForceGraph({
   nodes,
@@ -23,22 +47,22 @@ function ForceGraph({
   searchTerm = '',
   viewMode = 'technology',
   loading = false,
-}) {
-  const canvasRef = useRef(null)
-  const simRef = useRef(null)
+}: ForceGraphProps) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const simRef = useRef<d3.Simulation<GraphNode, GraphEdge> | null>(null)
   const transformRef = useRef(d3.zoomIdentity)
-  const hoveredRef = useRef(null)
-  const selectedIdRef = useRef(null)
-  const timeScaleRef = useRef(null)
-  const drawRef = useRef(null)
-  const quadtreeRef = useRef(null)
+  const hoveredRef = useRef<GraphNode | null>(null)
+  const selectedIdRef = useRef<string | null>(null)
+  const timeScaleRef = useRef<d3.ScaleLinear<number, number> | null>(null)
+  const drawRef = useRef<(() => void) | null>(null)
+  const quadtreeRef = useRef<d3.Quadtree<GraphNode> | null>(null)
   const portraitRef = useRef(window.matchMedia(MOBILE_QUERY).matches)
-  const [tooltip, setTooltip] = useState(null)
+  const [tooltip, setTooltip] = useState<TooltipState | null>(null)
 
   // ─── TIME SCALE ───────────────────────────────────────────
   // Each era gets equal screen width — piecewise linear within each era.
   // This prevents Prehistoric's 3M-year span from crushing all modern eras.
-  const timeExtent = useMemo(() => {
+  const timeExtent = useMemo((): [number, number] => {
     if (!nodes.length) return [-3000000, 2003]
     const years = nodes.map((n) => n.year)
     return [Math.min(...years), Math.max(...years)]
@@ -52,14 +76,14 @@ function ForceGraph({
 
   // Build a piecewise linear scale: equal screen width per visible era
   const buildTimeScale = useCallback(
-    (rangeStart, rangeEnd) => {
+    (rangeStart: number, rangeEnd: number) => {
       if (!visibleEras.length) {
         return d3.scaleLinear().domain(timeExtent).range([rangeStart, rangeEnd])
       }
       const eraWidth = (rangeEnd - rangeStart) / visibleEras.length
       // Build domain/range breakpoints for d3.scaleLinear (piecewise)
-      const domain = []
-      const range = []
+      const domain: number[] = []
+      const range: number[] = []
       visibleEras.forEach((b, i) => {
         const clampedStart = Math.max(b.start, timeExtent[0])
         const clampedEnd = Math.min(b.end, timeExtent[1])
@@ -76,9 +100,9 @@ function ForceGraph({
   )
 
   // ─── ADJACENCY MAP ────────────────────────────────────────
-  const adjMap = useRef(new Map())
+  const adjMap = useRef(new Map<string, AdjEntry>())
   useEffect(() => {
-    const m = new Map()
+    const m = new Map<string, AdjEntry>()
     nodes.forEach((n) =>
       m.set(n._id, { node: n, neighbors: new Set(), edges: [] }),
     )
@@ -94,9 +118,9 @@ function ForceGraph({
   }, [nodes, edges])
 
   // ─── SEARCH MATCHES ───────────────────────────────────────
-  const searchSet = useRef(new Set())
+  const searchSet = useRef(new Set<string>())
   useEffect(() => {
-    const s = new Set()
+    const s = new Set<string>()
     if (searchTerm.length >= 2) {
       const lower = searchTerm.toLowerCase()
       nodes.forEach((n) => {
@@ -112,9 +136,9 @@ function ForceGraph({
   }, [selectedId])
 
   const getColor = useCallback(
-    (node) => {
+    (node: GraphNode): string => {
       const palette = colorBy === 'era' ? ERA_COLORS : CATEGORY_COLORS
-      return palette[node[colorBy]] || '#666'
+      return (palette as Record<string, string>)[node[colorBy]] || '#666'
     },
     [colorBy],
   )
@@ -124,6 +148,7 @@ function ForceGraph({
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
+    if (!ctx) return
     const { width, height } = canvas
     const t = transformRef.current
     const timeScale = timeScaleRef.current
@@ -137,7 +162,7 @@ function ForceGraph({
         // ── PORTRAIT: horizontal bands, axis on left ──
         const graphLeft = AXIS_SIZE
 
-        visibleEras.forEach((b, i) => {
+        visibleEras.forEach((b: EraBoundary, i: number) => {
           const yStart = t.y + t.k * timeScale(Math.max(b.start, timeExtent[0]))
           const yEnd = t.y + t.k * timeScale(Math.min(b.end, timeExtent[1]))
           const bh = yEnd - yStart
@@ -167,7 +192,7 @@ function ForceGraph({
 
         // Era labels in the left axis bar (rotated vertically)
         ctx.font = '9px monospace'
-        visibleEras.forEach((b) => {
+        visibleEras.forEach((b: EraBoundary) => {
           const yStart = t.y + t.k * timeScale(Math.max(b.start, timeExtent[0]))
           const yEnd = t.y + t.k * timeScale(Math.min(b.end, timeExtent[1]))
           const cy = (yStart + yEnd) / 2
@@ -175,7 +200,7 @@ function ForceGraph({
 
           if (cy < -100 || cy > height + 100) return
 
-          const eraColor = ERA_COLORS[b.era] || '#666'
+          const eraColor = ERA_COLORS[b.era as Era] || '#666'
 
           // Always show color dot if band is at least 10px
           if (bh >= 10) {
@@ -202,7 +227,7 @@ function ForceGraph({
         // ── LANDSCAPE: vertical bands, axis at bottom ──
         const graphBottom = height - AXIS_SIZE
 
-        visibleEras.forEach((b, i) => {
+        visibleEras.forEach((b: EraBoundary, i: number) => {
           const xStart = t.x + t.k * timeScale(Math.max(b.start, timeExtent[0]))
           const xEnd = t.x + t.k * timeScale(Math.min(b.end, timeExtent[1]))
           const bw = xEnd - xStart
@@ -233,7 +258,7 @@ function ForceGraph({
         // Era labels in the axis bar
         ctx.font = '10px monospace'
         const axisY = graphBottom + AXIS_SIZE / 2
-        visibleEras.forEach((b) => {
+        visibleEras.forEach((b: EraBoundary) => {
           const xStart = t.x + t.k * timeScale(Math.max(b.start, timeExtent[0]))
           const xEnd = t.x + t.k * timeScale(Math.min(b.end, timeExtent[1]))
           const cx = (xStart + xEnd) / 2
@@ -241,7 +266,7 @@ function ForceGraph({
 
           if (cx < -100 || cx > width + 100) return
 
-          const eraColor = ERA_COLORS[b.era] || '#666'
+          const eraColor = ERA_COLORS[b.era as Era] || '#666'
 
           // Always show color dot if band is at least 10px
           if (bw >= 10) {
@@ -282,7 +307,7 @@ function ForceGraph({
       ? adjMap.current.get(hovered._id)?.neighbors
       : null
     const hasSearch = searchSet.current.size > 0
-    const isHighlighted = (n) => {
+    const isHighlighted = (n: GraphNode) => {
       if (selId) {
         return n._id === selId || selNeighbors?.has(n._id)
       }
@@ -295,8 +320,8 @@ function ForceGraph({
 
     // Edges
     edges.forEach((e) => {
-      const s = e.source
-      const tgt = e.target
+      const s = e.source as GraphNode
+      const tgt = e.target as GraphNode
       if (!s.x || !tgt.x) return
 
       const sHi = isHighlighted(s)
@@ -317,8 +342,8 @@ function ForceGraph({
         ctx.shadowBlur = 0
       }
       ctx.beginPath()
-      ctx.moveTo(s.x, s.y)
-      ctx.lineTo(tgt.x, tgt.y)
+      ctx.moveTo(s.x, s.y!)
+      ctx.lineTo(tgt.x, tgt.y!)
       ctx.stroke()
     })
     ctx.shadowBlur = 0
@@ -339,15 +364,15 @@ function ForceGraph({
       if (isPerson) {
         // Diamond shape for person nodes
         ctx.beginPath()
-        ctx.moveTo(n.x, n.y - sr * 1.2)
-        ctx.lineTo(n.x + sr, n.y)
-        ctx.lineTo(n.x, n.y + sr * 1.2)
-        ctx.lineTo(n.x - sr, n.y)
+        ctx.moveTo(n.x, n.y! - sr * 1.2)
+        ctx.lineTo(n.x + sr, n.y!)
+        ctx.lineTo(n.x, n.y! + sr * 1.2)
+        ctx.lineTo(n.x - sr, n.y!)
         ctx.closePath()
         ctx.fill()
       } else {
         ctx.beginPath()
-        ctx.arc(n.x, n.y, sr, 0, Math.PI * 2)
+        ctx.arc(n.x, n.y!, sr, 0, Math.PI * 2)
         ctx.fill()
       }
 
@@ -377,7 +402,7 @@ function ForceGraph({
       nodes.forEach((n) => {
         if (!n.x) return
         if (!isHighlighted(n)) return
-        ctx.fillText(n.name, n.x + (NODE_RADIUS + 3) / t.k, n.y)
+        ctx.fillText(n.name, n.x + (NODE_RADIUS + 3) / t.k, n.y!)
       })
     }
 
@@ -395,6 +420,7 @@ function ForceGraph({
     if (!nodes.length) return
 
     const canvas = canvasRef.current
+    if (!canvas || !canvas.parentElement) return
     const width = canvas.parentElement.clientWidth
     const height = canvas.parentElement.clientHeight
     canvas.width = width
@@ -403,7 +429,7 @@ function ForceGraph({
     const isPortrait = portraitRef.current
 
     // Build piecewise time scale along the timeline axis
-    let timeScale
+    let timeScale: d3.ScaleLinear<number, number>
     if (isPortrait) {
       // Portrait: year → y pixel (top to bottom)
       timeScale = buildTimeScale(TIMELINE_PADDING, height - TIMELINE_PADDING)
@@ -428,18 +454,18 @@ function ForceGraph({
         'link',
         d3
           .forceLink(edges)
-          .id((d) => d._id)
+          .id((d) => (d as GraphNode)._id)
           .distance(60)
           .strength(0.1),
       )
       .force('charge', d3.forceManyBody().strength(-30).distanceMax(300))
       // Strong pull along timeline axis, weak centering on the other
       .force('x', isPortrait
-        ? d3.forceX(centerX).strength(0.05)
-        : d3.forceX((d) => timeScale(d.year)).strength(0.8))
+        ? d3.forceX<GraphNode>(centerX).strength(0.05)
+        : d3.forceX<GraphNode>((d) => timeScale(d.year)).strength(0.8))
       .force('y', isPortrait
-        ? d3.forceY((d) => timeScale(d.year)).strength(0.8)
-        : d3.forceY(centerY).strength(0.05))
+        ? d3.forceY<GraphNode>((d) => timeScale(d.year)).strength(0.8)
+        : d3.forceY<GraphNode>(centerY).strength(0.05))
       .force('collision', d3.forceCollide(NODE_RADIUS + 1))
       .alphaDecay(0.03)
       .velocityDecay(0.4)
@@ -459,9 +485,9 @@ function ForceGraph({
 
     // ─── ZOOM ───────────────────────────────────────────────
     const zoom = d3
-      .zoom()
+      .zoom<HTMLCanvasElement, unknown>()
       .scaleExtent([0.1, 8])
-      .on('zoom', (event) => {
+      .on('zoom', (event: d3.D3ZoomEvent<HTMLCanvasElement, unknown>) => {
         transformRef.current = event.transform
         drawRef.current?.()
       })
@@ -472,26 +498,26 @@ function ForceGraph({
     // ─── MOUSE INTERACTION ──────────────────────────────────
     const rebuildQuadtree = () => {
       quadtreeRef.current = d3
-        .quadtree()
-        .x((d) => d.x)
-        .y((d) => d.y)
+        .quadtree<GraphNode>()
+        .x((d) => d.x!)
+        .y((d) => d.y!)
         .addAll(nodes.filter((n) => n.x !== undefined))
     }
 
-    const findNode = (mx, my) => {
-      if (!quadtreeRef.current) return null
+    const findNode = (mx: number, my: number): GraphNode | undefined => {
+      if (!quadtreeRef.current) return undefined
       const t = transformRef.current
       const x = (mx - t.x) / t.k
       const y = (my - t.y) / t.k
       const radius = 12 / t.k
-      return quadtreeRef.current.find(x, y, radius)
+      return quadtreeRef.current.find(x, y, radius) ?? undefined
     }
 
-    const handleMove = (event) => {
+    const handleMove = (event: MouseEvent) => {
       const rect = canvas.getBoundingClientRect()
       const mx = event.clientX - rect.left
       const my = event.clientY - rect.top
-      const found = findNode(mx, my)
+      const found = findNode(mx, my) ?? null
 
       // When a node is selected, only allow hovering its neighbors
       const selId = selectedIdRef.current
@@ -530,7 +556,7 @@ function ForceGraph({
       }
     }
 
-    const handleClick = (event) => {
+    const handleClick = (event: MouseEvent) => {
       const rect = canvas.getBoundingClientRect()
       const found = findNode(
         event.clientX - rect.left,
@@ -548,7 +574,7 @@ function ForceGraph({
       }
     }
 
-    const handleTouchEnd = (event) => {
+    const handleTouchEnd = (event: TouchEvent) => {
       if (event.changedTouches.length !== 1) return
       const touch = event.changedTouches[0]
       const rect = canvas.getBoundingClientRect()
@@ -571,6 +597,7 @@ function ForceGraph({
     // ─── RESIZE + ORIENTATION CHANGE ──────────────────────
     const mq = window.matchMedia(MOBILE_QUERY)
     const handleOrientationOrResize = () => {
+      if (!canvas.parentElement) return
       const { clientWidth: w, clientHeight: h } = canvas.parentElement
       canvas.width = w
       canvas.height = h
@@ -578,17 +605,17 @@ function ForceGraph({
       const nowPortrait = mq.matches
       portraitRef.current = nowPortrait
 
-      let newScale
+      let newScale: d3.ScaleLinear<number, number>
       if (nowPortrait) {
         newScale = buildTimeScale(TIMELINE_PADDING, h - TIMELINE_PADDING)
         const newCenterX = AXIS_SIZE + (w - AXIS_SIZE) / 2
-        sim.force('x', d3.forceX(newCenterX).strength(0.05))
-        sim.force('y', d3.forceY((d) => newScale(d.year)).strength(0.15))
+        sim.force('x', d3.forceX<GraphNode>(newCenterX).strength(0.05))
+        sim.force('y', d3.forceY<GraphNode>((d) => newScale(d.year)).strength(0.15))
       } else {
         newScale = buildTimeScale(TIMELINE_PADDING, w - TIMELINE_PADDING)
         const newCenterY = (h - AXIS_SIZE) / 2
-        sim.force('x', d3.forceX((d) => newScale(d.year)).strength(0.15))
-        sim.force('y', d3.forceY(newCenterY).strength(0.05))
+        sim.force('x', d3.forceX<GraphNode>((d) => newScale(d.year)).strength(0.15))
+        sim.force('y', d3.forceY<GraphNode>(newCenterY).strength(0.05))
       }
       timeScaleRef.current = newScale
       sim.alpha(0.3).restart()
@@ -663,7 +690,8 @@ function ForceGraph({
           </div>
           <div style={{ color: '#888', fontSize: 11 }}>
             {tooltip.node.category}
-            {tooltip.node.contributionCount != null &&
+            {'contributionCount' in tooltip.node &&
+              tooltip.node.contributionCount != null &&
               ` · ${tooltip.node.contributionCount} contributions`}
           </div>
         </div>

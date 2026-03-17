@@ -10,8 +10,9 @@ import {
 const NODE_RADIUS = 4
 const HOVER_RADIUS = 8
 const LABEL_THRESHOLD = 1.4
-const AXIS_HEIGHT = 36 // px reserved at bottom for the era axis
-const TIMELINE_PADDING = 60 // px margin left/right
+const AXIS_SIZE = 36 // px reserved for the era axis (bottom in landscape, left in portrait)
+const TIMELINE_PADDING = 60 // px margin along the timeline axis
+const MOBILE_QUERY = '(max-width: 768px)'
 
 function ForceGraph({
   nodes,
@@ -31,6 +32,7 @@ function ForceGraph({
   const timeScaleRef = useRef(null)
   const drawRef = useRef(null)
   const quadtreeRef = useRef(null)
+  const portraitRef = useRef(window.matchMedia(MOBILE_QUERY).matches)
   const [tooltip, setTooltip] = useState(null)
 
   // ─── TIME SCALE ───────────────────────────────────────────
@@ -129,69 +131,147 @@ function ForceGraph({
     ctx.clearRect(0, 0, width, height)
 
     // ── Era bands (drawn in screen space, behind everything) ──
+    const portrait = portraitRef.current
     if (timeScale) {
-      const graphBottom = height - AXIS_HEIGHT
+      if (portrait) {
+        // ── PORTRAIT: horizontal bands, axis on left ──
+        const graphLeft = AXIS_SIZE
 
-      // Band fills across the graph area
-      visibleEras.forEach((b, i) => {
-        const xStart = t.x + t.k * timeScale(Math.max(b.start, timeExtent[0]))
-        const xEnd = t.x + t.k * timeScale(Math.min(b.end, timeExtent[1]))
-        const bw = xEnd - xStart
-        if (xEnd < 0 || xStart > width) return
+        visibleEras.forEach((b, i) => {
+          const yStart = t.y + t.k * timeScale(Math.max(b.start, timeExtent[0]))
+          const yEnd = t.y + t.k * timeScale(Math.min(b.end, timeExtent[1]))
+          const bh = yEnd - yStart
+          if (yEnd < 0 || yStart > height) return
 
-        // Subtle alternating band
-        ctx.fillStyle =
-          i % 2 === 0 ? 'rgba(255,255,255,0.015)' : 'rgba(255,255,255,0.0)'
-        ctx.fillRect(xStart, 0, bw, graphBottom)
+          ctx.fillStyle =
+            i % 2 === 0 ? 'rgba(255,255,255,0.015)' : 'rgba(255,255,255,0.0)'
+          ctx.fillRect(graphLeft, yStart, width - graphLeft, bh)
 
-        // Vertical separator line
-        ctx.strokeStyle = 'rgba(255,255,255,0.06)'
+          ctx.strokeStyle = 'rgba(255,255,255,0.06)'
+          ctx.lineWidth = 1
+          ctx.beginPath()
+          ctx.moveTo(graphLeft, yStart)
+          ctx.lineTo(width, yStart)
+          ctx.stroke()
+        })
+
+        // Axis bar on left
+        ctx.fillStyle = 'rgba(14, 16, 21, 0.95)'
+        ctx.fillRect(0, 0, graphLeft, height)
+        ctx.strokeStyle = 'rgba(255,255,255,0.08)'
         ctx.lineWidth = 1
         ctx.beginPath()
-        ctx.moveTo(xStart, 0)
-        ctx.lineTo(xStart, graphBottom)
+        ctx.moveTo(graphLeft, 0)
+        ctx.lineTo(graphLeft, height)
         ctx.stroke()
-      })
 
-      // ── Axis bar at bottom ──
-      ctx.fillStyle = 'rgba(14, 16, 21, 0.95)'
-      ctx.fillRect(0, graphBottom, width, AXIS_HEIGHT)
-      ctx.strokeStyle = 'rgba(255,255,255,0.08)'
-      ctx.lineWidth = 1
-      ctx.beginPath()
-      ctx.moveTo(0, graphBottom)
-      ctx.lineTo(width, graphBottom)
-      ctx.stroke()
+        // Era labels in the left axis bar (rotated vertically)
+        ctx.font = '9px monospace'
+        visibleEras.forEach((b) => {
+          const yStart = t.y + t.k * timeScale(Math.max(b.start, timeExtent[0]))
+          const yEnd = t.y + t.k * timeScale(Math.min(b.end, timeExtent[1]))
+          const cy = (yStart + yEnd) / 2
+          const bh = yEnd - yStart
 
-      // Era labels in the axis bar
-      visibleEras.forEach((b) => {
-        const xStart = t.x + t.k * timeScale(Math.max(b.start, timeExtent[0]))
-        const xEnd = t.x + t.k * timeScale(Math.min(b.end, timeExtent[1]))
-        const cx = (xStart + xEnd) / 2
-        const bw = xEnd - xStart
+          if (cy < -100 || cy > height + 100) return
 
-        if (cx < -100 || cx > width + 100) return
+          const eraColor = ERA_COLORS[b.era] || '#666'
 
-        // Era color dot
-        const eraColor = ERA_COLORS[b.era] || '#666'
-        ctx.fillStyle = eraColor
+          // Always show color dot if band is at least 10px
+          if (bh >= 10) {
+            ctx.fillStyle = eraColor
+            ctx.beginPath()
+            ctx.arc(graphLeft / 2, cy, 3, 0, Math.PI * 2)
+            ctx.fill()
+          }
+
+          // Only show text if it fits (rotated, so text width = vertical space needed)
+          const labelLen = ctx.measureText(b.era).width + 14
+          if (bh >= labelLen) {
+            ctx.save()
+            ctx.translate(graphLeft / 2, cy)
+            ctx.rotate(-Math.PI / 2)
+            ctx.fillStyle = 'rgba(255,255,255,0.5)'
+            ctx.textAlign = 'center'
+            ctx.textBaseline = 'bottom'
+            ctx.fillText(b.era, 0, -6)
+            ctx.restore()
+          }
+        })
+      } else {
+        // ── LANDSCAPE: vertical bands, axis at bottom ──
+        const graphBottom = height - AXIS_SIZE
+
+        visibleEras.forEach((b, i) => {
+          const xStart = t.x + t.k * timeScale(Math.max(b.start, timeExtent[0]))
+          const xEnd = t.x + t.k * timeScale(Math.min(b.end, timeExtent[1]))
+          const bw = xEnd - xStart
+          if (xEnd < 0 || xStart > width) return
+
+          ctx.fillStyle =
+            i % 2 === 0 ? 'rgba(255,255,255,0.015)' : 'rgba(255,255,255,0.0)'
+          ctx.fillRect(xStart, 0, bw, graphBottom)
+
+          ctx.strokeStyle = 'rgba(255,255,255,0.06)'
+          ctx.lineWidth = 1
+          ctx.beginPath()
+          ctx.moveTo(xStart, 0)
+          ctx.lineTo(xStart, graphBottom)
+          ctx.stroke()
+        })
+
+        // Axis bar at bottom
+        ctx.fillStyle = 'rgba(14, 16, 21, 0.95)'
+        ctx.fillRect(0, graphBottom, width, AXIS_SIZE)
+        ctx.strokeStyle = 'rgba(255,255,255,0.08)'
+        ctx.lineWidth = 1
         ctx.beginPath()
-        ctx.arc(cx - 4, graphBottom + AXIS_HEIGHT / 2, 3, 0, Math.PI * 2)
-        ctx.fill()
+        ctx.moveTo(0, graphBottom)
+        ctx.lineTo(width, graphBottom)
+        ctx.stroke()
 
-        // Label — only show if band is wide enough
-        if (bw > 50) {
-          ctx.fillStyle = 'rgba(255,255,255,0.5)'
-          ctx.font = '10px monospace'
-          ctx.textAlign = 'left'
-          ctx.textBaseline = 'middle'
-          ctx.fillText(b.era, cx + 4, graphBottom + AXIS_HEIGHT / 2)
-        }
-      })
+        // Era labels in the axis bar
+        ctx.font = '10px monospace'
+        const axisY = graphBottom + AXIS_SIZE / 2
+        visibleEras.forEach((b) => {
+          const xStart = t.x + t.k * timeScale(Math.max(b.start, timeExtent[0]))
+          const xEnd = t.x + t.k * timeScale(Math.min(b.end, timeExtent[1]))
+          const cx = (xStart + xEnd) / 2
+          const bw = xEnd - xStart
+
+          if (cx < -100 || cx > width + 100) return
+
+          const eraColor = ERA_COLORS[b.era] || '#666'
+
+          // Always show color dot if band is at least 10px
+          if (bw >= 10) {
+            ctx.fillStyle = eraColor
+            ctx.beginPath()
+            ctx.arc(cx, axisY, 3, 0, Math.PI * 2)
+            ctx.fill()
+          }
+
+          // Only show text if it fits
+          const labelLen = ctx.measureText(b.era).width + 14
+          if (bw >= labelLen) {
+            ctx.fillStyle = 'rgba(255,255,255,0.5)'
+            ctx.textAlign = 'left'
+            ctx.textBaseline = 'middle'
+            ctx.fillText(b.era, cx + 6, axisY)
+          }
+        })
+      }
     }
 
-    // ── Graph content (transformed) ──
+    // ── Graph content (clipped to graph area, then transformed) ──
     ctx.save()
+    ctx.beginPath()
+    if (portrait) {
+      ctx.rect(AXIS_SIZE, 0, width - AXIS_SIZE, height)
+    } else {
+      ctx.rect(0, 0, width, height - AXIS_SIZE)
+    }
+    ctx.clip()
     ctx.translate(t.x, t.y)
     ctx.scale(t.k, t.k)
 
@@ -320,15 +400,27 @@ function ForceGraph({
     canvas.width = width
     canvas.height = height
 
-    const graphHeight = height - AXIS_HEIGHT
+    const isPortrait = portraitRef.current
 
-    // Build piecewise time scale: year → x pixel (equal width per era)
-    const timeScale = buildTimeScale(TIMELINE_PADDING, width - TIMELINE_PADDING)
+    // Build piecewise time scale along the timeline axis
+    let timeScale
+    if (isPortrait) {
+      // Portrait: year → y pixel (top to bottom)
+      timeScale = buildTimeScale(TIMELINE_PADDING, height - TIMELINE_PADDING)
+    } else {
+      // Landscape: year → x pixel (left to right)
+      timeScale = buildTimeScale(TIMELINE_PADDING, width - TIMELINE_PADDING)
+    }
 
     timeScaleRef.current = timeScale
 
     // Stop any existing simulation
     simRef.current?.stop()
+
+    const graphWidth = isPortrait ? width - AXIS_SIZE : width
+    const graphHeight = isPortrait ? height : height - AXIS_SIZE
+    const centerX = isPortrait ? AXIS_SIZE + graphWidth / 2 : width / 2
+    const centerY = isPortrait ? height / 2 : graphHeight / 2
 
     const sim = d3
       .forceSimulation(nodes)
@@ -341,10 +433,13 @@ function ForceGraph({
           .strength(0.1),
       )
       .force('charge', d3.forceManyBody().strength(-30).distanceMax(300))
-      // Strong horizontal pull toward year position to maintain chronological order
-      .force('x', d3.forceX((d) => timeScale(d.year)).strength(0.8))
-      // Vertical centering within the graph area (above the axis)
-      .force('y', d3.forceY(graphHeight / 2).strength(0.05))
+      // Strong pull along timeline axis, weak centering on the other
+      .force('x', isPortrait
+        ? d3.forceX(centerX).strength(0.05)
+        : d3.forceX((d) => timeScale(d.year)).strength(0.8))
+      .force('y', isPortrait
+        ? d3.forceY((d) => timeScale(d.year)).strength(0.8)
+        : d3.forceY(centerY).strength(0.05))
       .force('collision', d3.forceCollide(NODE_RADIUS + 1))
       .alphaDecay(0.03)
       .velocityDecay(0.4)
@@ -473,23 +568,35 @@ function ForceGraph({
     canvas.addEventListener('click', handleClick)
     canvas.addEventListener('touchend', handleTouchEnd, { passive: false })
 
-    // ─── RESIZE ─────────────────────────────────────────────
-    const resizeObs = new ResizeObserver((entries) => {
-      const { width: w, height: h } = entries[0].contentRect
+    // ─── RESIZE + ORIENTATION CHANGE ──────────────────────
+    const mq = window.matchMedia(MOBILE_QUERY)
+    const handleOrientationOrResize = () => {
+      const { clientWidth: w, clientHeight: h } = canvas.parentElement
       canvas.width = w
       canvas.height = h
 
-      // Rebuild piecewise scale for new width
-      const newScale = buildTimeScale(TIMELINE_PADDING, w - TIMELINE_PADDING)
-      timeScaleRef.current = newScale
+      const nowPortrait = mq.matches
+      portraitRef.current = nowPortrait
 
-      // Update forces with new dimensions
-      const newGraphHeight = h - AXIS_HEIGHT
-      sim.force('x', d3.forceX((d) => newScale(d.year)).strength(0.15))
-      sim.force('y', d3.forceY(newGraphHeight / 2).strength(0.05))
+      let newScale
+      if (nowPortrait) {
+        newScale = buildTimeScale(TIMELINE_PADDING, h - TIMELINE_PADDING)
+        const newCenterX = AXIS_SIZE + (w - AXIS_SIZE) / 2
+        sim.force('x', d3.forceX(newCenterX).strength(0.05))
+        sim.force('y', d3.forceY((d) => newScale(d.year)).strength(0.15))
+      } else {
+        newScale = buildTimeScale(TIMELINE_PADDING, w - TIMELINE_PADDING)
+        const newCenterY = (h - AXIS_SIZE) / 2
+        sim.force('x', d3.forceX((d) => newScale(d.year)).strength(0.15))
+        sim.force('y', d3.forceY(newCenterY).strength(0.05))
+      }
+      timeScaleRef.current = newScale
       sim.alpha(0.3).restart()
-    })
+    }
+
+    const resizeObs = new ResizeObserver(handleOrientationOrResize)
     resizeObs.observe(canvas.parentElement)
+    mq.addEventListener('change', handleOrientationOrResize)
 
     return () => {
       sim.stop()
@@ -497,6 +604,7 @@ function ForceGraph({
       canvas.removeEventListener('click', handleClick)
       canvas.removeEventListener('touchend', handleTouchEnd)
       resizeObs.disconnect()
+      mq.removeEventListener('change', handleOrientationOrResize)
     }
   }, [nodes, edges, onNodeClick, timeExtent, buildTimeScale])
 

@@ -453,8 +453,25 @@ function ForceGraph({
       }
     }
 
+    const handleTouchEnd = (event) => {
+      if (event.changedTouches.length !== 1) return
+      const touch = event.changedTouches[0]
+      const rect = canvas.getBoundingClientRect()
+      const found = findNode(
+        touch.clientX - rect.left,
+        touch.clientY - rect.top,
+      )
+      if (found && onNodeClick) {
+        event.preventDefault()
+        onNodeClick(found._id)
+        hoveredRef.current = null
+        setTooltip(null)
+      }
+    }
+
     canvas.addEventListener('mousemove', handleMove)
     canvas.addEventListener('click', handleClick)
+    canvas.addEventListener('touchend', handleTouchEnd, { passive: false })
 
     // ─── RESIZE ─────────────────────────────────────────────
     const resizeObs = new ResizeObserver((entries) => {
@@ -478,6 +495,7 @@ function ForceGraph({
       sim.stop()
       canvas.removeEventListener('mousemove', handleMove)
       canvas.removeEventListener('click', handleClick)
+      canvas.removeEventListener('touchend', handleTouchEnd)
       resizeObs.disconnect()
     }
   }, [nodes, edges, onNodeClick, timeExtent, buildTimeScale])
@@ -491,8 +509,15 @@ function ForceGraph({
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <canvas
         ref={canvasRef}
-        style={{ display: 'block', width: '100%', height: '100%' }}
+        style={{ display: 'block', width: '100%', height: '100%', touchAction: 'none' }}
       />
+      {loading && (
+        <div className="graph-loader">
+          <div className="graph-loader-dot" />
+          <div className="graph-loader-dot" />
+          <div className="graph-loader-dot" />
+        </div>
+      )}
       {nodes.length === 0 && !loading && (
         <div className="graph-empty">
           {viewMode === 'person'

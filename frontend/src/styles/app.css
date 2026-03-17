@@ -24,6 +24,7 @@ html,
 body,
 #root {
   height: 100%;
+  height: 100dvh;
   background: var(--bg-deep);
   color: var(--text-primary);
   font-family: var(--font-sans);
@@ -34,6 +35,7 @@ body,
 .app-layout {
   display: flex;
   height: 100vh;
+  height: 100dvh;
 }
 
 /* ── Sidebar ────────────────────────────────────────────── */
@@ -41,6 +43,7 @@ body,
   width: 280px;
   min-width: 280px;
   height: 100vh;
+  height: 100dvh;
   background: var(--bg-panel);
   border-right: 1px solid var(--border);
   overflow-y: auto;
@@ -526,6 +529,35 @@ body,
   opacity: 0.7;
 }
 
+/* ── Graph loading spinner ─────────────────────────────── */
+.graph-loader {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  pointer-events: none;
+  display: flex;
+  gap: 6px;
+}
+.graph-loader-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: dotBounce 0.6s ease-in-out infinite alternate;
+}
+.graph-loader-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.graph-loader-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+@keyframes dotBounce {
+  0%   { opacity: 0.2; transform: scale(0.8); }
+  100% { opacity: 1;   transform: scale(1.2); }
+}
+
 /* ── Graph empty state ─────────────────────────────────── */
 .graph-empty {
   position: absolute;
@@ -535,4 +567,112 @@ body,
   font-size: 13px;
   font-family: var(--font-mono);
   color: var(--text-dim);
+}
+
+/* ── Mobile hamburger button ──────────────────────────── */
+.sidebar-toggle {
+  display: none;
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 60;
+  width: 40px;
+  height: 40px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 20px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.sidebar-toggle:hover {
+  background: var(--bg-surface);
+}
+
+/* ── Sidebar backdrop (mobile overlay) ────────────────── */
+.sidebar-backdrop {
+  display: none;
+}
+
+/* ── Responsive: tablet & mobile ─────────────────────── */
+@media (max-width: 768px) {
+  .sidebar-toggle {
+    display: flex;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 55;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    max-width: 85vw;
+  }
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-header {
+    padding-left: 44px;
+  }
+
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 54;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+  .sidebar-backdrop.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* ── Detail panel → bottom sheet ─────────────────────── */
+  .detail-panel {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: 100%;
+    height: 60vh;
+    height: 60dvh;
+    max-height: 80vh;
+    max-height: 80dvh;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    border-radius: 14px 14px 0 0;
+    animation: slideUp 0.25s ease;
+    padding-top: 32px;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+
+  /* Drag handle at top of bottom sheet */
+  .detail-panel::before {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .detail-close {
+    top: 8px;
+    right: 12px;
+  }
 }

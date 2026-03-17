@@ -24,6 +24,7 @@ export default function Sidebar({
   loading,
   viewMode = 'technology',
   onViewModeChange,
+  isOpen = false,
 }) {
   const stats = useStats()
   const eras = stats?.eras || DEFAULT_ERAS
@@ -108,7 +109,7 @@ export default function Sidebar({
   }
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
       <div className="sidebar-header">
         <h1 className="logo">
           tech<span className="logo-accent">Relative</span>

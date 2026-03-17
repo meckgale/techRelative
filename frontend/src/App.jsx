@@ -1,4 +1,4 @@
-import { useState, useCallback, lazy, Suspense } from 'react'
+import { useState, useCallback, useEffect, lazy, Suspense } from 'react'
 import Sidebar from './components/Sidebar/Sidebar'
 import { useGraphData } from './hooks/useGraphData'
 import { useDebounce } from './hooks/useDebounce'
@@ -8,6 +8,7 @@ const ForceGraph = lazy(() => import('./components/Graph/ForceGraph'))
 const TechDetail = lazy(() => import('./components/TechDetail/TechDetail'))
 const PersonDetail = lazy(() => import('./components/PersonDetail/PersonDetail'))
 
+
 export default function App() {
   const [filters, setFilters] = useState({ era: '', category: '' })
   const [colorBy, setColorBy] = useState('era')
@@ -15,6 +16,17 @@ export default function App() {
   const [selectedId, setSelectedId] = useState(null)
   const [selectedPerson, setSelectedPerson] = useState(null)
   const [viewMode, setViewMode] = useState('technology')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // Close sidebar when resizing above mobile breakpoint
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)')
+    const handler = () => { if (!mq.matches) setSidebarOpen(false) }
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+
+  const closeSidebar = useCallback(() => setSidebarOpen(false), [])
 
   const debouncedFilters = useDebounce(filters, 300)
   const { graphData, loading, error } = useGraphData(debouncedFilters, viewMode)
@@ -27,13 +39,15 @@ export default function App() {
       setSelectedId((prev) => (prev === id ? null : id))
       setSelectedPerson(null)
     }
-  }, [viewMode])
+    closeSidebar()
+  }, [viewMode, closeSidebar])
 
   const handleFilterChange = useCallback((newFilters) => {
     setFilters(newFilters)
     setSelectedId(null)
     setSelectedPerson(null)
-  }, [])
+    closeSidebar()
+  }, [closeSidebar])
 
   const handlePersonClick = useCallback((name) => {
     setSelectedPerson(name)
@@ -57,6 +71,19 @@ export default function App() {
 
   return (
     <div className="app-layout">
+      <button
+        className="sidebar-toggle"
+        onClick={() => setSidebarOpen((v) => !v)}
+        aria-label="Toggle sidebar"
+      >
+        {sidebarOpen ? '✕' : '☰'}
+      </button>
+
+      <div
+        className={`sidebar-backdrop ${sidebarOpen ? 'visible' : ''}`}
+        onClick={closeSidebar}
+      />
+
       <Sidebar
         filters={filters}
         onFilterChange={handleFilterChange}
@@ -71,6 +98,7 @@ export default function App() {
         loading={loading}
         viewMode={viewMode}
         onViewModeChange={handleViewModeChange}
+        isOpen={sidebarOpen}
       />
 
       <main className="graph-container">

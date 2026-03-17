@@ -7,7 +7,7 @@ import { Person } from "../models/Person.js";
 const router = Router();
 
 // Simple in-memory cache for graph data
-const graphCache = new Map();
+export const graphCache = new Map();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 // ── GET /api/technologies ─────────────────────────────────────────────

@@ -1,13 +1,11 @@
 import { memo, useEffect } from 'react'
 import { usePersonDetail } from '../../hooks/useGraphData'
+import { useAppStore } from '../../store/useAppStore'
 import { ERA_COLORS, CATEGORY_COLORS } from '../../utils/constants'
 import type { Era, Category } from '../../types'
 
 interface PersonDetailProps {
-  personName: string | null
-  onClose: () => void
-  onNavigateTech: (id: string) => void
-  onBack: (() => void) | null
+  onBack: boolean
 }
 
 function formatYear(year: number): string {
@@ -15,28 +13,33 @@ function formatYear(year: number): string {
   return `${year} CE`
 }
 
-function PersonDetail({ personName, onClose, onNavigateTech, onBack }: PersonDetailProps) {
+function PersonDetail({ onBack }: PersonDetailProps) {
+  const personName = useAppStore((s) => s.selectedPerson)
+  const closeDetail = useAppStore((s) => s.closeDetail)
+  const navigateToTech = useAppStore((s) => s.navigateToTech)
+  const clearPerson = useAppStore((s) => s.clearPerson)
+
   const { person, contributions, loading, error } = usePersonDetail(personName)
 
   useEffect(() => {
     if (!personName) return
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') closeDetail()
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [personName, onClose])
+  }, [personName, closeDetail])
 
   if (!personName) return null
 
   return (
     <div className="detail-panel">
-      <button className="detail-close" onClick={onClose}>
+      <button className="detail-close" onClick={closeDetail}>
         ✕
       </button>
 
       {onBack && (
-        <button className="person-back" onClick={onBack}>
+        <button className="person-back" onClick={clearPerson}>
           ← Back
         </button>
       )}
@@ -135,7 +138,7 @@ function PersonDetail({ personName, onClose, onNavigateTech, onBack }: PersonDet
                 <button
                   key={c._id}
                   className="person-contribution"
-                  onClick={() => onNavigateTech(c._id)}
+                  onClick={() => navigateToTech(c._id)}
                 >
                   <span className="person-contribution-year">
                     {c.yearDisplay}

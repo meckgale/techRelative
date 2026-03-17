@@ -2,12 +2,13 @@ import { useEffect, useRef, useCallback, useState } from 'react'
 import { memo } from 'react'
 import * as d3 from 'd3'
 import { ERA_COLORS, CATEGORY_COLORS } from '../../utils/constants'
+import { useAppStore, useActiveSelectedId } from '../../store/useAppStore'
 import { useTimeScale } from './useTimeScale'
 import { drawEraAxis, AXIS_SIZE } from './drawEraAxis'
 import { drawGraphContent, NODE_RADIUS } from './drawGraphContent'
 import GraphTooltip from './GraphTooltip'
 import type { TooltipState } from './GraphTooltip'
-import type { GraphNode, GraphEdge, ColorBy, ViewMode } from '../../types'
+import type { GraphNode, GraphEdge } from '../../types'
 
 const TIMELINE_PADDING = 60
 const MOBILE_QUERY = '(max-width: 768px)'
@@ -21,24 +22,20 @@ interface AdjEntry {
 interface ForceGraphProps {
   nodes: GraphNode[]
   edges: GraphEdge[]
-  colorBy?: ColorBy
-  onNodeClick?: (id: string) => void
-  selectedId?: string | null
-  searchTerm?: string
-  viewMode?: ViewMode
   loading?: boolean
 }
 
 function ForceGraph({
   nodes,
   edges,
-  colorBy = 'era',
-  onNodeClick,
-  selectedId = null,
-  searchTerm = '',
-  viewMode = 'technology',
   loading = false,
 }: ForceGraphProps) {
+  const colorBy = useAppStore((s) => s.colorBy)
+  const searchTerm = useAppStore((s) => s.searchTerm)
+  const viewMode = useAppStore((s) => s.viewMode)
+  const selectNode = useAppStore((s) => s.selectNode)
+  const selectedId = useActiveSelectedId()
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const simRef = useRef<d3.Simulation<GraphNode, GraphEdge> | null>(null)
   const transformRef = useRef(d3.zoomIdentity)
@@ -259,10 +256,10 @@ function ForceGraph({
     const handleClick = (event: MouseEvent) => {
       const rect = canvas.getBoundingClientRect()
       const found = findNode(event.clientX - rect.left, event.clientY - rect.top)
-      if (found && onNodeClick) {
-        onNodeClick(found._id)
-      } else if (!found && selectedIdRef.current && onNodeClick) {
-        onNodeClick(selectedIdRef.current)
+      if (found) {
+        selectNode(found._id)
+      } else if (selectedIdRef.current) {
+        selectNode(selectedIdRef.current)
       }
       hoveredRef.current = null
       setTooltip(null)
@@ -273,9 +270,9 @@ function ForceGraph({
       const touch = event.changedTouches[0]
       const rect = canvas.getBoundingClientRect()
       const found = findNode(touch.clientX - rect.left, touch.clientY - rect.top)
-      if (found && onNodeClick) {
+      if (found) {
         event.preventDefault()
-        onNodeClick(found._id)
+        selectNode(found._id)
         hoveredRef.current = null
         setTooltip(null)
       }
@@ -324,7 +321,7 @@ function ForceGraph({
       resizeObs.disconnect()
       mq.removeEventListener('change', handleOrientationOrResize)
     }
-  }, [nodes, edges, onNodeClick, timeExtent, buildTimeScale])
+  }, [nodes, edges, selectNode, timeExtent, buildTimeScale])
 
   // Redraw when colorBy, search, or selection changes (no sim restart needed)
   useEffect(() => {

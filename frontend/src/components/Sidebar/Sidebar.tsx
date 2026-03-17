@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useStats } from '../../hooks/useGraphData'
+import { useAppStore } from '../../store/useAppStore'
 import {
   ERA_COLORS,
   CATEGORY_COLORS,
@@ -10,9 +11,6 @@ import {
 import type {
   Era,
   Category,
-  Filters,
-  ViewMode,
-  ColorBy,
   SearchResultTech,
   SearchResultPerson,
 } from '../../types'
@@ -22,38 +20,24 @@ const FALLBACK_COLOR = '#666'
 type SearchResult = SearchResultTech | SearchResultPerson
 
 interface SidebarProps {
-  filters: Filters
-  onFilterChange: (filters: Filters) => void
-  colorBy: ColorBy
-  onColorByChange: (colorBy: ColorBy) => void
-  searchTerm: string
-  onSearchChange: (term: string) => void
-  onSelectTech: (id: string) => void
-  onSelectPerson: (name: string) => void
   nodeCount: number
   edgeCount: number
   loading: boolean
-  viewMode: ViewMode
-  onViewModeChange: (mode: ViewMode) => void
-  isOpen: boolean
 }
 
-export default function Sidebar({
-  filters,
-  onFilterChange,
-  colorBy,
-  onColorByChange,
-  searchTerm,
-  onSearchChange,
-  onSelectTech,
-  onSelectPerson,
-  nodeCount,
-  edgeCount,
-  loading,
-  viewMode = 'technology',
-  onViewModeChange,
-  isOpen = false,
-}: SidebarProps) {
+export default function Sidebar({ nodeCount, edgeCount, loading }: SidebarProps) {
+  const filters = useAppStore((s) => s.filters)
+  const colorBy = useAppStore((s) => s.colorBy)
+  const searchTerm = useAppStore((s) => s.searchTerm)
+  const viewMode = useAppStore((s) => s.viewMode)
+  const isOpen = useAppStore((s) => s.sidebarOpen)
+  const setFilters = useAppStore((s) => s.setFilters)
+  const setColorBy = useAppStore((s) => s.setColorBy)
+  const setSearchTerm = useAppStore((s) => s.setSearchTerm)
+  const setViewMode = useAppStore((s) => s.setViewMode)
+  const selectNode = useAppStore((s) => s.selectNode)
+  const selectPerson = useAppStore((s) => s.selectPerson)
+
   const stats = useStats()
   const eras = stats?.eras || ERAS
   const categories = stats?.categories || CATEGORIES
@@ -97,27 +81,24 @@ export default function Sidebar({
   }, [searchTerm, viewMode])
 
   const handleEra = (era: Era) => {
-    onFilterChange({ ...filters, era: filters.era === era ? '' : era })
+    setFilters({ ...filters, era: filters.era === era ? '' : era })
   }
   const handleCategory = (cat: Category) => {
-    onFilterChange({
-      ...filters,
-      category: filters.category === cat ? '' : cat,
-    })
+    setFilters({ ...filters, category: filters.category === cat ? '' : cat })
   }
   const clearAll = () => {
-    onFilterChange({ era: '', category: '' })
-    onSearchChange('')
+    setFilters({ era: '', category: '' })
+    setSearchTerm('')
   }
 
   const handleResultClick = (item: SearchResult) => {
     if (viewMode === 'person') {
-      onSelectPerson(item.name)
+      selectPerson(item.name)
     } else {
-      onSelectTech((item as SearchResultTech)._id)
+      selectNode((item as SearchResultTech)._id)
     }
     setSearchResults([])
-    onSearchChange('')
+    setSearchTerm('')
     setActiveIdx(-1)
   }
 
@@ -166,7 +147,7 @@ export default function Sidebar({
             <button
               key={v}
               className={`toggle-btn ${viewMode === v ? 'active' : ''}`}
-              onClick={() => onViewModeChange(v)}
+              onClick={() => setViewMode(v)}
             >
               {v === 'technology' ? 'tech' : 'person'}
             </button>
@@ -181,7 +162,7 @@ export default function Sidebar({
           className="search-input"
           placeholder={viewMode === 'person' ? 'Search persons…' : 'Search technologies…'}
           value={searchTerm}
-          onChange={(e) => onSearchChange(e.target.value)}
+          onChange={(e) => setSearchTerm(e.target.value)}
           onKeyDown={handleSearchKeyDown}
         />
         {searching && (
@@ -216,7 +197,7 @@ export default function Sidebar({
             <button
               key={v}
               className={`toggle-btn ${colorBy === v ? 'active' : ''}`}
-              onClick={() => onColorByChange(v)}
+              onClick={() => setColorBy(v)}
             >
               {v}
             </button>

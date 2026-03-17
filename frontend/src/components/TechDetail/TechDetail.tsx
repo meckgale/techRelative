@@ -1,24 +1,22 @@
 import { memo, useMemo, useEffect } from 'react'
 import { useTechDetail } from '../../hooks/useGraphData'
+import { useAppStore } from '../../store/useAppStore'
 import { ERA_COLORS, CATEGORY_COLORS } from '../../utils/constants'
 import type { Era, Category } from '../../types'
-
-interface TechDetailProps {
-  techId: string | null
-  onClose: () => void
-  onNavigate: (id: string) => void
-  onPersonClick: (name: string) => void
-}
 
 interface RelatedNode {
   _id: string
   name: string
 }
 
-function TechDetail({ techId, onClose, onNavigate, onPersonClick }: TechDetailProps) {
+function TechDetail() {
+  const techId = useAppStore((s) => s.selectedId)
+  const selectPerson = useAppStore((s) => s.selectPerson)
+  const navigateToTech = useAppStore((s) => s.navigateToTech)
+  const clearSelection = useAppStore((s) => s.clearSelection)
+
   const { tech, relations, loading, error } = useTechDetail(techId)
 
-  // Extract unique neighbor technologies from relations
   const related = useMemo(() => {
     if (!techId || !relations.length) return [] as RelatedNode[]
     const seen = new Set<string>()
@@ -33,21 +31,20 @@ function TechDetail({ techId, onClose, onNavigate, onPersonClick }: TechDetailPr
     return result
   }, [techId, relations])
 
-  // Escape key closes the panel
   useEffect(() => {
     if (!techId) return
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') clearSelection()
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [techId, onClose])
+  }, [techId, clearSelection])
 
   if (!techId) return null
 
   return (
     <div className="detail-panel">
-      <button className="detail-close" onClick={onClose}>
+      <button className="detail-close" onClick={clearSelection}>
         ✕
       </button>
 
@@ -97,7 +94,7 @@ function TechDetail({ techId, onClose, onNavigate, onPersonClick }: TechDetailPr
               <span className="detail-field-label">Person</span>
               <button
                 className="person-link"
-                onClick={() => onPersonClick(tech.person!)}
+                onClick={() => selectPerson(tech.person!)}
               >
                 {tech.person}
               </button>
@@ -122,7 +119,7 @@ function TechDetail({ techId, onClose, onNavigate, onPersonClick }: TechDetailPr
                   <button
                     key={rel._id}
                     className="related-link"
-                    onClick={() => onNavigate(rel._id)}
+                    onClick={() => navigateToTech(rel._id)}
                   >
                     {rel.name}
                   </button>

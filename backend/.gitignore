@@ -5,3 +5,5 @@ data/seed_data_old.json
 data/persons_wiki.json
 scripts/normalize-persons.ts
 scripts/enrich-persons.ts
+scripts/requirements.txt
+scripts/extract_technologies.py

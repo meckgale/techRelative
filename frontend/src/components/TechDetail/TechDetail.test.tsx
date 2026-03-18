@@ -8,8 +8,8 @@ const mockTech = {
   name: "Calculus",
   year: 1687,
   yearDisplay: "1687 CE",
-  era: "Early Modern",
-  category: "Mathematics",
+  era: "Early Modern" as const,
+  category: "Mathematics" as const,
   tags: ["calculus", "analysis"],
   description: "Development of calculus",
   region: "Europe",
@@ -18,9 +18,9 @@ const mockTech = {
 
 const mockRelations = [
   {
-    from: { _id: "tech-1", name: "Calculus", year: 1687, yearDisplay: "1687 CE", category: "Mathematics" },
-    to: { _id: "tech-2", name: "Classical Mechanics", year: 1687, yearDisplay: "1687 CE", category: "Physics" },
-    type: "enabled",
+    from: { _id: "tech-1", name: "Calculus", year: 1687, yearDisplay: "1687 CE", category: "Mathematics" as const },
+    to: { _id: "tech-2", name: "Classical Mechanics", year: 1687, yearDisplay: "1687 CE", category: "Physics" as const },
+    type: "enabled" as const,
   },
 ];
 

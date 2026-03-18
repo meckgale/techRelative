@@ -55,7 +55,7 @@ router.get("/technologies", async (req: Request, res: Response) => {
 
 router.get("/technologies/:id", async (req: Request, res: Response) => {
   try {
-    const techId = new mongoose.Types.ObjectId(req.params.id);
+    const techId = new mongoose.Types.ObjectId(req.params.id as string);
 
     const tech = await Technology.findById(techId).lean();
     if (!tech) {
@@ -203,7 +203,7 @@ router.get("/stats", async (_req: Request, res: Response) => {
 
 router.get("/persons/:name", async (req: Request, res: Response) => {
   try {
-    const name = decodeURIComponent(req.params.name);
+    const name = decodeURIComponent(req.params.name as string);
 
     // Fetch technologies and stored Wikipedia data in parallel
     const [technologies, personDoc] = await Promise.all([

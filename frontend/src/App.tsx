@@ -27,7 +27,7 @@ export default function App() {
   }, [closeSidebar])
 
   const debouncedFilters = useDebounce(filters, 300)
-  const { graphData, loading, error } = useGraphData(debouncedFilters, viewMode)
+  const { graphData, loading, error, refetch } = useGraphData(debouncedFilters, viewMode)
 
   return (
     <div className="app-layout">
@@ -52,7 +52,10 @@ export default function App() {
 
       <main className="graph-container">
         {error && (
-          <div className="error-banner">Failed to load graph: {error}</div>
+          <div className="error-banner">
+            Failed to load graph: {error}
+            <button className="retry-btn" onClick={refetch}>Retry</button>
+          </div>
         )}
 
         <Suspense fallback={<div>Loading graph...</div>}>

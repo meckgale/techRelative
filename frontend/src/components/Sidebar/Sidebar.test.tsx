@@ -5,7 +5,7 @@ import { useAppStore } from "../../store/useAppStore";
 
 // Mock useStats to avoid API calls
 vi.mock("../../hooks/useGraphData", () => ({
-  useStats: vi.fn(() => null),
+  useStats: vi.fn(() => ({ stats: null, error: null })),
 }));
 
 beforeEach(() => {

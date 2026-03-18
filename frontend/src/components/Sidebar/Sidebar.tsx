@@ -38,7 +38,7 @@ export default function Sidebar({ nodeCount, edgeCount, loading }: SidebarProps)
   const selectNode = useAppStore((s) => s.selectNode)
   const selectPerson = useAppStore((s) => s.selectPerson)
 
-  const stats = useStats()
+  const { stats } = useStats()
   const eras = stats?.eras || ERAS
   const categories = stats?.categories || CATEGORIES
 

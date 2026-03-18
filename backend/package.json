@@ -18,7 +18,8 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "mongoose": "^8.10.1",
-    "response-time": "^2.3.4"
+    "response-time": "^2.3.4",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/compression": "^1.8.1",

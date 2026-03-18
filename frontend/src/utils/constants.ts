@@ -52,4 +52,4 @@ export const ERA_BOUNDARIES: EraBoundary[] = [
   { era: 'Information', start: 1970, end: 2030 },
 ]
 
-export const API_BASE = '/api'
+export const API_BASE = import.meta.env.VITE_API_BASE || '/api'

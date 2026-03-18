@@ -19,7 +19,7 @@ function PersonDetail({ onBack }: PersonDetailProps) {
   const navigateToTech = useAppStore((s) => s.navigateToTech)
   const clearPerson = useAppStore((s) => s.clearPerson)
 
-  const { person, contributions, loading, error } = usePersonDetail(personName)
+  const { person, contributions, loading, error, retry } = usePersonDetail(personName)
 
   useEffect(() => {
     if (!personName) return
@@ -45,7 +45,11 @@ function PersonDetail({ onBack }: PersonDetailProps) {
       )}
 
       {loading && <div className="loading-indicator">Loading…</div>}
-      {error && <div className="detail-error">Failed to load person</div>}
+      {error && (
+        <div className="detail-error">
+          {error} <button className="retry-btn" onClick={retry}>Retry</button>
+        </div>
+      )}
 
       {person && (
         <>

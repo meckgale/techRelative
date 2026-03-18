@@ -43,6 +43,7 @@ beforeEach(() => {
     relations: [],
     loading: false,
     error: null,
+    retry: vi.fn(),
   });
 });
 
@@ -59,6 +60,7 @@ describe("TechDetail", () => {
       relations: [],
       loading: true,
       error: null,
+      retry: vi.fn(),
     });
 
     render(<TechDetail />);
@@ -72,10 +74,12 @@ describe("TechDetail", () => {
       relations: [],
       loading: false,
       error: "Network error",
+      retry: vi.fn(),
     });
 
     render(<TechDetail />);
-    expect(screen.getByText("Failed to load details")).toBeInTheDocument();
+    expect(screen.getByText("Network error")).toBeInTheDocument();
+    expect(screen.getByText("Retry")).toBeInTheDocument();
   });
 
   it("renders tech details", () => {
@@ -85,6 +89,7 @@ describe("TechDetail", () => {
       relations: mockRelations,
       loading: false,
       error: null,
+      retry: vi.fn(),
     });
 
     render(<TechDetail />);
@@ -106,6 +111,7 @@ describe("TechDetail", () => {
       relations: mockRelations,
       loading: false,
       error: null,
+      retry: vi.fn(),
     });
 
     render(<TechDetail />);
@@ -119,6 +125,7 @@ describe("TechDetail", () => {
       relations: mockRelations,
       loading: false,
       error: null,
+      retry: vi.fn(),
     });
 
     render(<TechDetail />);
@@ -136,6 +143,7 @@ describe("TechDetail", () => {
       relations: [],
       loading: false,
       error: null,
+      retry: vi.fn(),
     });
 
     render(<TechDetail />);
@@ -151,6 +159,7 @@ describe("TechDetail", () => {
       relations: [],
       loading: false,
       error: null,
+      retry: vi.fn(),
     });
 
     render(<TechDetail />);
@@ -166,6 +175,7 @@ describe("TechDetail", () => {
       relations: [],
       loading: false,
       error: null,
+      retry: vi.fn(),
     });
 
     render(<TechDetail />);
@@ -181,6 +191,7 @@ describe("TechDetail", () => {
       relations: [],
       loading: false,
       error: null,
+      retry: vi.fn(),
     });
 
     render(<TechDetail />);

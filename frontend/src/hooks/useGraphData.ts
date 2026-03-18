@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useReducer } from 'react'
 import { API_BASE } from '../utils/constants'
+import { fetchWithRetry, friendlyError } from '../utils/fetchWithRetry'
 import type {
   Filters,
   ViewMode,
@@ -83,19 +84,16 @@ export function useGraphData(filters: Filters, mode: ViewMode = 'technology') {
     if (filters.category) params.set('category', filters.category)
 
     try {
-      const res = await fetch(`${API_BASE}/${endpoint}?${params}`, {
+      const res = await fetchWithRetry(`${API_BASE}/${endpoint}?${params}`, {
         signal: controller.signal,
       })
-      if (!res.ok) throw new Error(`API ${res.status}`)
       const data = await res.json()
       setGraphData(data)
       setLoading(false)
     } catch (err) {
-      if (err instanceof Error && err.name !== 'AbortError') {
-        setError(err.message)
-        setLoading(false)
-        console.error('Graph fetch failed:', err)
-      }
+      if (err instanceof DOMException && err.name === 'AbortError') return
+      setError(friendlyError(err))
+      setLoading(false)
     }
   }, [filters.era, filters.category, endpoint])
 
@@ -109,63 +107,60 @@ export function useGraphData(filters: Filters, mode: ViewMode = 'technology') {
 
 export function useStats() {
   const [stats, setStats] = useState<StatsData | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch(`${API_BASE}/stats`)
+    fetchWithRetry(`${API_BASE}/stats`)
       .then(r => r.json())
       .then(setStats)
-      .catch(console.error)
+      .catch(err => setError(friendlyError(err)))
   }, [])
 
-  return stats
+  return { stats, error }
 }
 
 export function usePersonDetail(name: string | null) {
   const [state, dispatch] = useReducer(personReducer, personInitial)
+  const [retryCount, setRetryCount] = useState(0)
 
   useEffect(() => {
     if (!name) return
     let cancelled = false
     dispatch({ type: 'loading' })
-    fetch(`${API_BASE}/persons/${encodeURIComponent(name)}`)
-      .then(r => {
-        if (!r.ok) throw new Error(`API ${r.status}`)
-        return r.json()
-      })
+    fetchWithRetry(`${API_BASE}/persons/${encodeURIComponent(name)}`)
+      .then(r => r.json())
       .then(data => {
         if (!cancelled) dispatch({ type: 'success', person: data.person, contributions: data.contributions || [] })
       })
       .catch(err => {
-        if (!cancelled) dispatch({ type: 'error', error: err.message })
+        if (!cancelled) dispatch({ type: 'error', error: friendlyError(err) })
       })
     return () => { cancelled = true }
-  }, [name])
+  }, [name, retryCount])
 
-  if (!name) return personInitial
-  return state
+  if (!name) return { ...personInitial, retry: () => {} }
+  return { ...state, retry: () => setRetryCount(c => c + 1) }
 }
 
 export function useTechDetail(id: string | null) {
   const [state, dispatch] = useReducer(detailReducer, detailInitial)
+  const [retryCount, setRetryCount] = useState(0)
 
   useEffect(() => {
     if (!id) return
     let cancelled = false
     dispatch({ type: 'loading' })
-    fetch(`${API_BASE}/technologies/${id}`)
-      .then(r => {
-        if (!r.ok) throw new Error(`API ${r.status}`)
-        return r.json()
-      })
+    fetchWithRetry(`${API_BASE}/technologies/${id}`)
+      .then(r => r.json())
       .then(data => {
         if (!cancelled) dispatch({ type: 'success', tech: data.technology, relations: data.relations || [] })
       })
       .catch(err => {
-        if (!cancelled) dispatch({ type: 'error', error: err.message })
+        if (!cancelled) dispatch({ type: 'error', error: friendlyError(err) })
       })
     return () => { cancelled = true }
-  }, [id])
+  }, [id, retryCount])
 
-  if (!id) return detailInitial
-  return state
+  if (!id) return { ...detailInitial, retry: () => {} }
+  return { ...state, retry: () => setRetryCount(c => c + 1) }
 }

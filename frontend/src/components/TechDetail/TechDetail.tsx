@@ -15,7 +15,7 @@ function TechDetail() {
   const navigateToTech = useAppStore((s) => s.navigateToTech)
   const clearSelection = useAppStore((s) => s.clearSelection)
 
-  const { tech, relations, loading, error } = useTechDetail(techId)
+  const { tech, relations, loading, error, retry } = useTechDetail(techId)
 
   const related = useMemo(() => {
     if (!techId || !relations.length) return [] as RelatedNode[]
@@ -49,7 +49,11 @@ function TechDetail() {
       </button>
 
       {loading && <div className="loading-indicator">Loading…</div>}
-      {error && <div className="detail-error">Failed to load details</div>}
+      {error && (
+        <div className="detail-error">
+          {error} <button className="retry-btn" onClick={retry}>Retry</button>
+        </div>
+      )}
 
       {tech && (
         <>

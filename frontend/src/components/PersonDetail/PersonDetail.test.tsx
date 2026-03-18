@@ -55,6 +55,7 @@ beforeEach(() => {
     contributions: [],
     loading: false,
     error: null,
+    retry: vi.fn(),
   });
 });
 
@@ -71,6 +72,7 @@ describe("PersonDetail", () => {
       contributions: [],
       loading: true,
       error: null,
+      retry: vi.fn(),
     });
 
     render(<PersonDetail onBack={false} />);
@@ -83,11 +85,13 @@ describe("PersonDetail", () => {
       person: null,
       contributions: [],
       loading: false,
-      error: "404",
+      error: "Request failed",
+      retry: vi.fn(),
     });
 
     render(<PersonDetail onBack={false} />);
-    expect(screen.getByText("Failed to load person")).toBeInTheDocument();
+    expect(screen.getByText("Request failed")).toBeInTheDocument();
+    expect(screen.getByText("Retry")).toBeInTheDocument();
   });
 
   it("renders person details", () => {
@@ -97,6 +101,7 @@ describe("PersonDetail", () => {
       contributions: mockContributions,
       loading: false,
       error: null,
+      retry: vi.fn(),
     });
 
     render(<PersonDetail onBack={false} />);
@@ -121,6 +126,7 @@ describe("PersonDetail", () => {
       contributions: [],
       loading: false,
       error: null,
+      retry: vi.fn(),
     });
 
     render(<PersonDetail onBack={false} />);
@@ -139,6 +145,7 @@ describe("PersonDetail", () => {
       contributions: [],
       loading: false,
       error: null,
+      retry: vi.fn(),
     });
 
     render(<PersonDetail onBack={false} />);
@@ -159,6 +166,7 @@ describe("PersonDetail", () => {
       contributions: [],
       loading: false,
       error: null,
+      retry: vi.fn(),
     });
 
     render(<PersonDetail onBack={false} />);
@@ -174,6 +182,7 @@ describe("PersonDetail", () => {
       contributions: mockContributions,
       loading: false,
       error: null,
+      retry: vi.fn(),
     });
 
     render(<PersonDetail onBack={false} />);
@@ -191,6 +200,7 @@ describe("PersonDetail", () => {
       contributions: [],
       loading: false,
       error: null,
+      retry: vi.fn(),
     });
 
     render(<PersonDetail onBack={false} />);
@@ -206,6 +216,7 @@ describe("PersonDetail", () => {
       contributions: [],
       loading: false,
       error: null,
+      retry: vi.fn(),
     });
 
     render(<PersonDetail onBack={false} />);
@@ -221,6 +232,7 @@ describe("PersonDetail", () => {
       contributions: [],
       loading: false,
       error: null,
+      retry: vi.fn(),
     });
 
     render(<PersonDetail onBack={true} />);
@@ -234,6 +246,7 @@ describe("PersonDetail", () => {
       contributions: [],
       loading: false,
       error: null,
+      retry: vi.fn(),
     });
 
     render(<PersonDetail onBack={false} />);
@@ -247,6 +260,7 @@ describe("PersonDetail", () => {
       contributions: [],
       loading: false,
       error: null,
+      retry: vi.fn(),
     });
 
     render(<PersonDetail onBack={true} />);
@@ -265,6 +279,7 @@ describe("PersonDetail", () => {
       contributions: [],
       loading: false,
       error: null,
+      retry: vi.fn(),
     });
 
     render(<PersonDetail onBack={false} />);

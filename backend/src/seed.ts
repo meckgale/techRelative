@@ -2,39 +2,41 @@ import mongoose from "mongoose";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 import dotenv from "dotenv";
-import { Technology } from "./models/Technology.js";
-import { Relation } from "./models/Relation.js";
+import { z } from "zod";
+import { Technology, ERAS, CATEGORIES } from "./models/Technology.js";
+import { Relation, RELATION_TYPES } from "./models/Relation.js";
 import { Person } from "./models/Person.js";
 
 dotenv.config();
 
-// ── Types for seed_data.json (snake_case from Python) ─────────────────
+// ── Zod schemas for seed_data.json validation ─────────────────────────
 
-interface SeedTechnology {
-  name: string;
-  year: number;
-  year_display: string;
-  era: string;
-  category: string;
-  tags: string[];
-  description: string;
-  region: string;
-  person: string | null;
-  see_also: string[];
-}
+const SeedTechnologySchema = z.object({
+  name: z.string().min(1),
+  year: z.number(),
+  year_display: z.string().min(1),
+  era: z.enum(ERAS),
+  category: z.enum(CATEGORIES),
+  tags: z.array(z.string()).default([]),
+  description: z.string().default(""),
+  region: z.string().nullable().default(null),
+  person: z.string().nullable().default(null),
+  see_also: z.array(z.string()).default([]),
+});
 
-interface SeedRelation {
-  from: string;
-  to: string;
-  type: string;
-  from_year: number;
-  to_year: number;
-}
+const SeedRelationSchema = z.object({
+  from: z.string().min(1),
+  to: z.string().min(1),
+  type: z.enum(RELATION_TYPES),
+  from_year: z.number(),
+  to_year: z.number(),
+});
 
-interface SeedData {
-  technologies: SeedTechnology[];
-  relations: SeedRelation[];
-}
+const SeedDataSchema = z.object({
+  technologies: z.array(SeedTechnologySchema).min(1),
+  relations: z.array(SeedRelationSchema),
+});
+
 
 // ── Main ──────────────────────────────────────────────────────────────
 
@@ -46,8 +48,17 @@ async function seed() {
 
   console.log(`Loading seed data from: ${dataPath}`);
   const raw = readFileSync(dataPath, "utf-8");
-  const data: SeedData = JSON.parse(raw);
+  const parsed = SeedDataSchema.safeParse(JSON.parse(raw));
 
+  if (!parsed.success) {
+    console.error("Seed data validation failed:");
+    for (const issue of parsed.error.issues) {
+      console.error(`  ${issue.path.join(".")} — ${issue.message}`);
+    }
+    process.exit(1);
+  }
+
+  const data = parsed.data;
   console.log(`  Technologies: ${data.technologies.length}`);
   console.log(`  Relations:    ${data.relations.length}`);
 

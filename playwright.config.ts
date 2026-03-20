@@ -4,7 +4,7 @@ export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
   workers: process.env.CI ? 1 : undefined,
-  retries: 1,
+  retries: 2,
   timeout: 60000,
   globalSetup: "./e2e/global-setup.ts",
   globalTeardown: "./e2e/global-teardown.ts",

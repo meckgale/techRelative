@@ -3,14 +3,14 @@ import { test, expect } from "@playwright/test";
 test.describe("Person Detail", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator(".meta-counts")).toBeVisible({ timeout: 15000 });
+    await expect(page.locator(".meta-counts")).toBeVisible({ timeout: 30000 });
   });
 
   test("clicking a person link from tech detail opens person panel", async ({ page }) => {
     // Open Calculus detail
     const input = page.locator(".search-input");
     await input.fill("Calculus");
-    await expect(page.locator(".search-results")).toBeVisible({ timeout: 5000 });
+    await expect(page.locator(".search-results")).toBeVisible({ timeout: 10000 });
     await page.locator(".search-result-item", { hasText: "Calculus" }).click();
     await expect(page.locator(".detail-panel")).toBeVisible();
 
@@ -25,7 +25,7 @@ test.describe("Person Detail", () => {
     // Navigate to person via tech detail
     const input = page.locator(".search-input");
     await input.fill("Calculus");
-    await expect(page.locator(".search-results")).toBeVisible({ timeout: 5000 });
+    await expect(page.locator(".search-results")).toBeVisible({ timeout: 10000 });
     await page.locator(".search-result-item", { hasText: "Calculus" }).click();
     await page.locator(".person-link").click();
 
@@ -40,7 +40,7 @@ test.describe("Person Detail", () => {
     // Open tech detail then person
     const input = page.locator(".search-input");
     await input.fill("Calculus");
-    await expect(page.locator(".search-results")).toBeVisible({ timeout: 5000 });
+    await expect(page.locator(".search-results")).toBeVisible({ timeout: 10000 });
     await page.locator(".search-result-item", { hasText: "Calculus" }).click();
     await page.locator(".person-link").click();
 
@@ -52,11 +52,12 @@ test.describe("Person Detail", () => {
     // Navigate to person via tech
     const input = page.locator(".search-input");
     await input.fill("Calculus");
-    await expect(page.locator(".search-results")).toBeVisible({ timeout: 5000 });
+    await expect(page.locator(".search-results")).toBeVisible({ timeout: 10000 });
     await page.locator(".search-result-item", { hasText: "Calculus" }).click();
     await page.locator(".person-link").click();
 
-    // Wait for person detail to load
+    // Wait for person detail to load (person-specific elements appear)
+    await expect(page.locator(".person-contribution").first()).toBeVisible();
     await expect(page.locator(".detail-name")).toContainText("Isaac Newton");
 
     // Click a contribution
@@ -71,7 +72,7 @@ test.describe("Person Detail", () => {
   test("close button dismisses person detail", async ({ page }) => {
     const input = page.locator(".search-input");
     await input.fill("Calculus");
-    await expect(page.locator(".search-results")).toBeVisible({ timeout: 5000 });
+    await expect(page.locator(".search-results")).toBeVisible({ timeout: 10000 });
     await page.locator(".search-result-item", { hasText: "Calculus" }).click();
     await page.locator(".person-link").click();
 

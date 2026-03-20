@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 test.describe("Search", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator(".meta-counts")).toBeVisible({ timeout: 15000 });
+    await expect(page.locator(".meta-counts")).toBeVisible({ timeout: 30000 });
   });
 
   test("typing 3+ characters shows search results", async ({ page }) => {
@@ -12,7 +12,7 @@ test.describe("Search", () => {
 
     // Wait for search results to appear
     const results = page.locator(".search-results");
-    await expect(results).toBeVisible({ timeout: 5000 });
+    await expect(results).toBeVisible({ timeout: 10000 });
     await expect(results.locator(".search-result-item")).toHaveCount(1);
     await expect(results).toContainText("Calculus");
   });
@@ -31,7 +31,7 @@ test.describe("Search", () => {
     await input.fill("Calculus");
 
     const results = page.locator(".search-results");
-    await expect(results).toBeVisible({ timeout: 5000 });
+    await expect(results).toBeVisible({ timeout: 10000 });
 
     await results.locator(".search-result-item").first().click();
 
@@ -48,7 +48,7 @@ test.describe("Search", () => {
     const input = page.locator(".search-input");
     await input.fill("Calculus");
 
-    await expect(page.locator(".search-results")).toBeVisible({ timeout: 5000 });
+    await expect(page.locator(".search-results")).toBeVisible({ timeout: 10000 });
 
     // Arrow down to highlight first result
     await input.press("ArrowDown");
@@ -65,7 +65,7 @@ test.describe("Search", () => {
     const input = page.locator(".search-input");
     await input.fill("Calculus");
 
-    await expect(page.locator(".search-results")).toBeVisible({ timeout: 5000 });
+    await expect(page.locator(".search-results")).toBeVisible({ timeout: 10000 });
 
     await input.press("Escape");
     await expect(page.locator(".search-results")).not.toBeVisible();

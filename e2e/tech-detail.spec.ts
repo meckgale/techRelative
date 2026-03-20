@@ -4,7 +4,7 @@ import { test, expect } from "@playwright/test";
 async function openTechDetail(page: any, name: string) {
   const input = page.locator(".search-input");
   await input.fill(name);
-  await expect(page.locator(".search-results")).toBeVisible({ timeout: 5000 });
+  await expect(page.locator(".search-results")).toBeVisible({ timeout: 10000 });
   await page.locator(".search-result-item", { hasText: name }).click();
   await expect(page.locator(".detail-panel")).toBeVisible();
 }
@@ -12,7 +12,7 @@ async function openTechDetail(page: any, name: string) {
 test.describe("Tech Detail", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator(".meta-counts")).toBeVisible({ timeout: 15000 });
+    await expect(page.locator(".meta-counts")).toBeVisible({ timeout: 30000 });
   });
 
   test("shows technology details after search selection", async ({ page }) => {

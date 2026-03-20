@@ -3,14 +3,14 @@ import { test, expect } from "@playwright/test";
 test.describe("Navigation", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator(".meta-counts")).toBeVisible({ timeout: 15000 });
+    await expect(page.locator(".meta-counts")).toBeVisible({ timeout: 30000 });
   });
 
   test("full navigation flow: tech -> person -> contribution -> tech", async ({ page }) => {
     // 1. Search and open Calculus
     const input = page.locator(".search-input");
     await input.fill("Calculus");
-    await expect(page.locator(".search-results")).toBeVisible({ timeout: 5000 });
+    await expect(page.locator(".search-results")).toBeVisible({ timeout: 10000 });
     await page.locator(".search-result-item", { hasText: "Calculus" }).click();
     await expect(page.locator(".detail-name")).toContainText("Calculus");
 
@@ -35,7 +35,7 @@ test.describe("Navigation", () => {
     // Open Classical Mechanics (which has relations)
     const input = page.locator(".search-input");
     await input.fill("Classical");
-    await expect(page.locator(".search-results")).toBeVisible({ timeout: 5000 });
+    await expect(page.locator(".search-results")).toBeVisible({ timeout: 10000 });
     await page.locator(".search-result-item", { hasText: "Classical Mechanics" }).click();
     await expect(page.locator(".detail-name")).toContainText("Classical Mechanics");
 

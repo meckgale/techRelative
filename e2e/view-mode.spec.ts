@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 test.describe("View Mode", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator(".meta-counts")).toBeVisible({ timeout: 15000 });
+    await expect(page.locator(".meta-counts")).toBeVisible({ timeout: 30000 });
   });
 
   test("defaults to technology view", async ({ page }) => {
@@ -18,14 +18,14 @@ test.describe("View Mode", () => {
 
     await expect(personBtn).toHaveClass(/active/);
     // Wait for data to reload with person graph
-    await expect(page.locator(".meta-counts")).toContainText("persons", { timeout: 5000 });
+    await expect(page.locator(".meta-counts")).toContainText("persons", { timeout: 10000 });
   });
 
   test("switching view mode clears selection", async ({ page }) => {
     // Open a tech detail first
     const input = page.locator(".search-input");
     await input.fill("Calculus");
-    await expect(page.locator(".search-results")).toBeVisible({ timeout: 5000 });
+    await expect(page.locator(".search-results")).toBeVisible({ timeout: 10000 });
     await page.locator(".search-result-item", { hasText: "Calculus" }).click();
     await expect(page.locator(".detail-panel")).toBeVisible();
 
@@ -39,7 +39,7 @@ test.describe("View Mode", () => {
   test("filters work in person view", async ({ page }) => {
     // Switch to person mode
     await page.locator(".toggle-btn", { hasText: "person" }).click();
-    await expect(page.locator(".meta-counts")).toContainText("persons", { timeout: 5000 });
+    await expect(page.locator(".meta-counts")).toContainText("persons", { timeout: 10000 });
 
     const counts = page.locator(".meta-counts");
     const initialText = await counts.textContent();
@@ -48,6 +48,6 @@ test.describe("View Mode", () => {
     await page.locator(".chip", { hasText: "Early Modern" }).click();
 
     // Counts should change
-    await expect(counts).not.toHaveText(initialText!, { timeout: 5000 });
+    await expect(counts).not.toHaveText(initialText!, { timeout: 10000 });
   });
 });

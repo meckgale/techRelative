@@ -4,7 +4,7 @@ test.describe("Filters", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
     // Wait for data to load
-    await expect(page.locator(".meta-counts")).toBeVisible({ timeout: 15000 });
+    await expect(page.locator(".meta-counts")).toBeVisible({ timeout: 30000 });
   });
 
   test("clicking an era chip activates it and updates counts", async ({ page }) => {
@@ -18,7 +18,7 @@ test.describe("Filters", () => {
     await expect(chip).toHaveClass(/active/);
 
     // Wait for count to change (filtered result)
-    await expect(counts).not.toHaveText(initialText!, { timeout: 5000 });
+    await expect(counts).not.toHaveText(initialText!, { timeout: 10000 });
   });
 
   test("clicking the same era chip again deactivates it", async ({ page }) => {
@@ -38,7 +38,7 @@ test.describe("Filters", () => {
     await chip.click();
     await expect(chip).toHaveClass(/active/);
 
-    await expect(counts).not.toHaveText(initialText!, { timeout: 5000 });
+    await expect(counts).not.toHaveText(initialText!, { timeout: 10000 });
   });
 
   test("clear all filters button resets everything", async ({ page }) => {

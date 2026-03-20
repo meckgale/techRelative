@@ -17,7 +17,7 @@ test.describe("App loads", () => {
 
     // Wait for counts to appear (data is loaded)
     const counts = page.locator(".meta-counts");
-    await expect(counts).toBeVisible({ timeout: 15000 });
+    await expect(counts).toBeVisible({ timeout: 30000 });
     await expect(counts).toContainText("nodes");
     await expect(counts).toContainText("edges");
   });

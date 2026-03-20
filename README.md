@@ -16,9 +16,9 @@ You can explore the data as a **technology graph** (nodes are inventions/discove
 | ------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | Visualization | **D3.js** with Canvas rendering                       | Canvas over SVG for performance — the graph renders thousands of nodes at interactive frame rates                       |
 | Frontend      | **React 19**, **TypeScript**, **Zustand**             | Zustand keeps graph state (filters, selections, view mode) simple and performant without prop drilling                  |
-| Backend       | **Express**, **TypeScript**, **Zod**                  | Zod validates seed data and API inputs at the boundary; MongoDB aggregation pipelines handle the graph queries          |
+| Backend       | **Express**, **TypeScript**, **Zod**, **Helmet**      | Zod validates seed data and API inputs at the boundary; Helmet sets security headers; MongoDB aggregation pipelines handle the graph queries |
 | Database      | **MongoDB 7**                                         | Document model fits the heterogeneous technology data naturally; `$lookup` pipelines derive the person graph on the fly |
-| DevOps        | **Docker Compose**, **Nginx**                         | Single `docker compose up` runs the full stack; Nginx serves the static frontend build                                  |
+| DevOps        | **Docker Compose**, **Nginx**, **GitHub Actions**     | Single `docker compose up` runs the full stack; Nginx serves the static frontend build and injects proxy auth; CI runs tests on push/PR |
 | Testing       | **Vitest**, **React Testing Library**, **Playwright** | Unit/component/integration tests plus E2E coverage for critical user flows                                              |
 | Extraction    | **Python**, **pymupdf**, **Ollama** (Qwen 2.5 14B)   | pymupdf provides span-level font metadata needed for deterministic PDF parsing; local LLM handles paraphrasing          |
 
@@ -98,6 +98,7 @@ cd backend
 npm install
 npm run seed              # Load technologies and relations
 npm run enrich-persons    # Fetch Wikipedia data for people
+npx tsx scripts/validate-persons.ts   # Cross-check person matches against Wikidata
 ```
 
 ### Local Development (without Docker)

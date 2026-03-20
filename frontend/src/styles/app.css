@@ -253,6 +253,25 @@ body,
   50% { opacity: 1; }
 }
 
+/* ── Sidebar footer ────────────────────────────────────── */
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: center;
+}
+
+.github-link {
+  color: var(--text-dim);
+  transition: color 0.15s;
+  display: flex;
+  align-items: center;
+}
+.github-link:hover {
+  color: var(--text-primary);
+}
+
 /* ── Graph area ─────────────────────────────────────────── */
 .graph-container {
   flex: 1;

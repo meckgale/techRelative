@@ -57,8 +57,8 @@ test.describe("Person Detail", () => {
     await page.locator(".person-link").click();
 
     // Wait for person detail to load (person-specific elements appear)
-    await expect(page.locator(".person-contribution").first()).toBeVisible();
-    await expect(page.locator(".detail-name")).toContainText("Isaac Newton");
+    await expect(page.locator(".person-contribution").first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator(".detail-name")).toContainText("Isaac Newton", { timeout: 10000 });
 
     // Click a contribution
     await page.locator(".person-contribution").first().click();

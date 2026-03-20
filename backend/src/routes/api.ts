@@ -3,6 +3,14 @@ import mongoose from "mongoose";
 import { Technology, ERAS, CATEGORIES } from "../models/Technology.js";
 import { Relation } from "../models/Relation.js";
 import { Person } from "../models/Person.js";
+import {
+  validate,
+  technologiesQuery,
+  technologyIdParam,
+  graphQuery,
+  personNameParam,
+  personsSearchQuery,
+} from "../validation.js";
 
 const router = Router();
 
@@ -13,19 +21,19 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 // ── GET /api/technologies ─────────────────────────────────────────────
 // Query params: era, category, search, page, limit
 
-router.get("/technologies", async (req: Request, res: Response) => {
+router.get("/technologies", validate(technologiesQuery), async (req: Request, res: Response) => {
   try {
-    const { era, category, search, page = "1", limit = "50" } = req.query;
+    const { era, category, search, page, limit } = req.query as unknown as {
+      era?: string; category?: string; search?: string; page: number; limit: number;
+    };
 
     const filter: Record<string, any> = {};
-    if (era && typeof era === "string") filter.era = era;
-    if (category && typeof category === "string") filter.category = category;
-    if (search && typeof search === "string") {
-      filter.$text = { $search: search };
-    }
+    if (era) filter.era = era;
+    if (category) filter.category = category;
+    if (search) filter.$text = { $search: search };
 
-    const pageNum = Math.max(1, parseInt(page as string));
-    const limitNum = Math.min(200, Math.max(1, parseInt(limit as string)));
+    const pageNum = page;
+    const limitNum = limit;
 
     const [technologies, total] = await Promise.all([
       Technology.find(filter)
@@ -53,9 +61,9 @@ router.get("/technologies", async (req: Request, res: Response) => {
 
 // ── GET /api/technologies/:id ─────────────────────────────────────────
 
-router.get("/technologies/:id", async (req: Request, res: Response) => {
+router.get("/technologies/:id", validate(technologyIdParam, "params"), async (req: Request, res: Response) => {
   try {
-    const techId = new mongoose.Types.ObjectId(req.params.id as string);
+    const techId = new mongoose.Types.ObjectId(req.params.id);
 
     const tech = await Technology.findById(techId).lean();
     if (!tech) {
@@ -110,13 +118,13 @@ router.get("/technologies/:id", async (req: Request, res: Response) => {
 // Returns nodes + edges for graph rendering
 // Query params: era, category (optional filters)
 
-router.get("/graph", async (req: Request, res: Response) => {
+router.get("/graph", validate(graphQuery), async (req: Request, res: Response) => {
   try {
-    const { era, category } = req.query;
+    const { era, category } = req.query as unknown as { era?: string; category?: string };
 
     const filter: Record<string, any> = {};
-    if (era && typeof era === "string") filter.era = era;
-    if (category && typeof category === "string") filter.category = category;
+    if (era) filter.era = era;
+    if (category) filter.category = category;
 
     // Create cache key
     const cacheKey = JSON.stringify(filter);
@@ -201,9 +209,9 @@ router.get("/stats", async (_req: Request, res: Response) => {
 // ── GET /api/persons/:name ─────────────────────────────────────────────
 // Aggregates all technologies by a person name to build a profile
 
-router.get("/persons/:name", async (req: Request, res: Response) => {
+router.get("/persons/:name", validate(personNameParam, "params"), async (req: Request, res: Response) => {
   try {
-    const name = decodeURIComponent(req.params.name as string);
+    const name = decodeURIComponent(req.params.name);
 
     // Fetch technologies and stored Wikipedia data in parallel
     const [technologies, personDoc] = await Promise.all([
@@ -265,13 +273,13 @@ router.get("/persons/:name", async (req: Request, res: Response) => {
 // Returns person nodes + derived edges for graph rendering
 // Persons are aggregated from technologies; edges derived from tech relations
 
-router.get("/persons-graph", async (req: Request, res: Response) => {
+router.get("/persons-graph", validate(graphQuery), async (req: Request, res: Response) => {
   try {
-    const { era, category } = req.query;
+    const { era, category } = req.query as unknown as { era?: string; category?: string };
 
     const filter: Record<string, any> = { person: { $nin: [null, ""] } };
-    if (era && typeof era === "string") filter.era = era;
-    if (category && typeof category === "string") filter.category = category;
+    if (era) filter.era = era;
+    if (category) filter.category = category;
 
     // Cache
     const cacheKey = "persons:" + JSON.stringify(filter);
@@ -400,14 +408,14 @@ function formatYear(year: number): string {
 // ── GET /api/persons-search ───────────────────────────────────────────
 // Search persons by name, returns deduplicated list
 
-router.get("/persons-search", async (req: Request, res: Response) => {
+router.get("/persons-search", validate(personsSearchQuery), async (req: Request, res: Response) => {
   try {
-    const { search, limit = "20" } = req.query;
-    if (!search || typeof search !== "string" || search.length < 2) {
+    const { search, limit } = req.query as unknown as { search?: string; limit: number };
+    if (!search || search.length < 2) {
       return res.json({ persons: [] });
     }
 
-    const limitNum = Math.min(50, Math.max(1, parseInt(String(limit))));
+    const limitNum = limit;
     const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
     const results = await Technology.aggregate([

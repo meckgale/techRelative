@@ -3,7 +3,6 @@ import { useAppStore } from "./useAppStore";
 
 // Helper to get fresh state and actions
 const getState = () => useAppStore.getState();
-const act = useAppStore.getState;
 
 beforeEach(() => {
   // Reset store to initial state between tests

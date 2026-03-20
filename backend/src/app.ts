@@ -38,7 +38,8 @@ function proxyAuth(
 ) {
   if (!PROXY_TOKEN) return next();
 
-  if (req.headers["x-proxy-token"] !== PROXY_TOKEN) {
+  const provided = req.headers["x-proxy-token"];
+  if (provided !== PROXY_TOKEN) {
     res.status(403).json({ error: "Forbidden" });
     return;
   }

@@ -126,8 +126,7 @@ router.get("/graph", validate(graphQuery), async (req: Request, res: Response) =
     if (era) filter.era = era;
     if (category) filter.category = category;
 
-    // Create cache key
-    const cacheKey = JSON.stringify(filter);
+    const cacheKey = `graph:${era || ""}:${category || ""}`;
     const cached = graphCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
       return res.json(cached.data);
@@ -282,7 +281,7 @@ router.get("/persons-graph", validate(graphQuery), async (req: Request, res: Res
     if (category) filter.category = category;
 
     // Cache
-    const cacheKey = "persons:" + JSON.stringify(filter);
+    const cacheKey = `persons:${era || ""}:${category || ""}`;
     const cached = graphCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
       return res.json(cached.data);

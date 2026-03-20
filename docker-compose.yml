@@ -3,6 +3,8 @@ services:
     build: ./frontend
     ports:
       - "80:80"
+    environment:
+      - PROXY_TOKEN=${PROXY_TOKEN}
     depends_on:
       - backend
 
@@ -10,11 +12,16 @@ services:
     build: ./backend
     environment:
       - MONGO_URL=${MONGO_URL}
+      - PROXY_TOKEN=${PROXY_TOKEN}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost}
     depends_on:
       - mongo
 
   mongo:
     image: mongo:7
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER:-admin}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
     volumes:
       - mongo_data:/data/db
 

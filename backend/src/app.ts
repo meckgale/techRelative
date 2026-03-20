@@ -1,13 +1,21 @@
 import express from "express";
 import cors from "cors";
 import compression from "compression";
+import helmet from "helmet";
 import responseTime from "response-time";
 import rateLimit from "express-rate-limit";
+import mongoose from "mongoose";
 import apiRoutes from "./routes/api.js";
 
 const app = express();
 
-app.use(cors());
+// Security headers
+app.use(helmet());
+
+// CORS — restrict to known origin in production
+const CORS_ORIGIN = process.env.CORS_ORIGIN || "*";
+app.use(cors({ origin: CORS_ORIGIN }));
+
 app.use(compression());
 app.use(responseTime());
 app.use(express.json());
@@ -20,11 +28,34 @@ const apiLimiter = rateLimit({
   message: { error: "Too many requests, please try again later." },
 });
 
+// Nginx proxy token validation (skipped if PROXY_TOKEN is not set)
+const PROXY_TOKEN = process.env.PROXY_TOKEN;
+
+function proxyAuth(
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction
+) {
+  if (!PROXY_TOKEN) return next();
+
+  if (req.headers["x-proxy-token"] !== PROXY_TOKEN) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+  next();
+}
+
 app.use("/api", apiLimiter);
+app.use("/api", proxyAuth);
 app.use("/api", apiRoutes);
 
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok" });
+app.get("/health", async (_req, res) => {
+  try {
+    await mongoose.connection.db!.admin().ping();
+    res.json({ status: "ok" });
+  } catch {
+    res.status(503).json({ status: "unhealthy", error: "Database unavailable" });
+  }
 });
 
 export default app;

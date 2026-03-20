@@ -3,6 +3,17 @@ import { ERA_COLORS } from '../../utils/constants'
 import type { Era, EraBoundary } from '../../types'
 
 const AXIS_SIZE = 36
+const GRADIENT_WIDTH = 24
+
+export { AXIS_SIZE }
+
+/** Convert hex color to rgba string */
+function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return `rgba(${r},${g},${b},${alpha})`
+}
 
 interface DrawEraAxisParams {
   ctx: CanvasRenderingContext2D
@@ -14,8 +25,6 @@ interface DrawEraAxisParams {
   timeExtent: [number, number]
   portrait: boolean
 }
-
-export { AXIS_SIZE }
 
 export function drawEraAxis({
   ctx,
@@ -45,24 +54,34 @@ function drawPortraitAxis(
 ): void {
   const graphLeft = AXIS_SIZE
 
-  // Era bands
-  visibleEras.forEach((b, i) => {
+  // Era bands with era-colored tint
+  visibleEras.forEach((b) => {
     const yStart = t.y + t.k * timeScale(Math.max(b.start, timeExtent[0]))
     const yEnd = t.y + t.k * timeScale(Math.min(b.end, timeExtent[1]))
     const bh = yEnd - yStart
     if (yEnd < 0 || yStart > height) return
 
-    ctx.fillStyle =
-      i % 2 === 0 ? 'rgba(255,255,255,0.015)' : 'rgba(255,255,255,0.0)'
+    const eraColor = ERA_COLORS[b.era as Era] || '#666'
+    ctx.fillStyle = hexToRgba(eraColor, 0.04)
     ctx.fillRect(graphLeft, yStart, width - graphLeft, bh)
-
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)'
-    ctx.lineWidth = 1
-    ctx.beginPath()
-    ctx.moveTo(graphLeft, yStart)
-    ctx.lineTo(width, yStart)
-    ctx.stroke()
   })
+
+  // Gradient transitions at era boundaries
+  for (let i = 1; i < visibleEras.length; i++) {
+    const boundary = Math.max(visibleEras[i].start, timeExtent[0])
+    const yPos = t.y + t.k * timeScale(boundary)
+    if (yPos < -GRADIENT_WIDTH || yPos > height + GRADIENT_WIDTH) continue
+
+    const prevColor = ERA_COLORS[visibleEras[i - 1].era as Era] || '#666'
+    const nextColor = ERA_COLORS[visibleEras[i].era as Era] || '#666'
+
+    const grad = ctx.createLinearGradient(0, yPos - GRADIENT_WIDTH, 0, yPos + GRADIENT_WIDTH)
+    grad.addColorStop(0, hexToRgba(prevColor, 0.06))
+    grad.addColorStop(0.5, 'rgba(255,255,255,0.03)')
+    grad.addColorStop(1, hexToRgba(nextColor, 0.06))
+    ctx.fillStyle = grad
+    ctx.fillRect(graphLeft, yPos - GRADIENT_WIDTH, width - graphLeft, GRADIENT_WIDTH * 2)
+  }
 
   // Axis bar on left
   ctx.fillStyle = 'rgba(14, 16, 21, 0.95)'
@@ -118,24 +137,34 @@ function drawLandscapeAxis(
 ): void {
   const graphBottom = height - AXIS_SIZE
 
-  // Era bands
-  visibleEras.forEach((b, i) => {
+  // Era bands with era-colored tint
+  visibleEras.forEach((b) => {
     const xStart = t.x + t.k * timeScale(Math.max(b.start, timeExtent[0]))
     const xEnd = t.x + t.k * timeScale(Math.min(b.end, timeExtent[1]))
     const bw = xEnd - xStart
     if (xEnd < 0 || xStart > width) return
 
-    ctx.fillStyle =
-      i % 2 === 0 ? 'rgba(255,255,255,0.015)' : 'rgba(255,255,255,0.0)'
+    const eraColor = ERA_COLORS[b.era as Era] || '#666'
+    ctx.fillStyle = hexToRgba(eraColor, 0.04)
     ctx.fillRect(xStart, 0, bw, graphBottom)
-
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)'
-    ctx.lineWidth = 1
-    ctx.beginPath()
-    ctx.moveTo(xStart, 0)
-    ctx.lineTo(xStart, graphBottom)
-    ctx.stroke()
   })
+
+  // Gradient transitions at era boundaries
+  for (let i = 1; i < visibleEras.length; i++) {
+    const boundary = Math.max(visibleEras[i].start, timeExtent[0])
+    const xPos = t.x + t.k * timeScale(boundary)
+    if (xPos < -GRADIENT_WIDTH || xPos > width + GRADIENT_WIDTH) continue
+
+    const prevColor = ERA_COLORS[visibleEras[i - 1].era as Era] || '#666'
+    const nextColor = ERA_COLORS[visibleEras[i].era as Era] || '#666'
+
+    const grad = ctx.createLinearGradient(xPos - GRADIENT_WIDTH, 0, xPos + GRADIENT_WIDTH, 0)
+    grad.addColorStop(0, hexToRgba(prevColor, 0.06))
+    grad.addColorStop(0.5, 'rgba(255,255,255,0.03)')
+    grad.addColorStop(1, hexToRgba(nextColor, 0.06))
+    ctx.fillStyle = grad
+    ctx.fillRect(xPos - GRADIENT_WIDTH, 0, GRADIENT_WIDTH * 2, graphBottom)
+  }
 
   // Axis bar at bottom
   ctx.fillStyle = 'rgba(14, 16, 21, 0.95)'

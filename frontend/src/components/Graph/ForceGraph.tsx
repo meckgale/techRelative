@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { memo } from 'react'
 import * as d3 from 'd3'
-import { ERA_COLORS, CATEGORY_COLORS } from '../../utils/constants'
+import { ERA_COLORS, CATEGORY_COLORS, CATEGORIES } from '../../utils/constants'
 import { useAppStore, useActiveSelectedId } from '../../store/useAppStore'
 import { useTimeScale } from './useTimeScale'
 import { drawEraAxis, AXIS_SIZE } from './drawEraAxis'
@@ -9,6 +9,7 @@ import { drawGraphContent, NODE_RADIUS } from './drawGraphContent'
 import GraphTooltip from './GraphTooltip'
 import type { TooltipState } from './GraphTooltip'
 import type { GraphNode, GraphEdge } from '../../types'
+import { ERA_BOUNDARIES } from '../../utils/constants'
 
 const TIMELINE_PADDING = 60
 const MOBILE_QUERY = '(max-width: 768px)'
@@ -159,10 +160,25 @@ function ForceGraph({
 
     simRef.current?.stop()
 
-    const graphWidth = isPortrait ? width - AXIS_SIZE : width
     const graphHeight = isPortrait ? height : height - AXIS_SIZE
-    const centerX = isPortrait ? AXIS_SIZE + graphWidth / 2 : width / 2
-    const centerY = isPortrait ? height / 2 : graphHeight / 2
+    const crossStart = isPortrait ? AXIS_SIZE + TIMELINE_PADDING : TIMELINE_PADDING
+    const crossEnd = isPortrait ? width - TIMELINE_PADDING : graphHeight - TIMELINE_PADDING
+
+    // Map each category to a position on the cross-axis (alphabetical order)
+    const categoryScale = new Map<string, number>()
+    const catPadding = (crossEnd - crossStart) / CATEGORIES.length
+    CATEGORIES.forEach((cat, i) => {
+      categoryScale.set(cat, crossStart + catPadding * (i + 0.5))
+    })
+    const getCategoryPos = (d: GraphNode) => categoryScale.get(d.category) ?? (crossStart + crossEnd) / 2
+
+    // Build era boundary lookup for clamping nodes within their era band
+    const eraBandCache = new Map<string, { min: number; max: number }>()
+    for (const b of ERA_BOUNDARIES) {
+      const bandMin = timeScale(Math.max(b.start, timeExtent[0]))
+      const bandMax = timeScale(Math.min(b.end, timeExtent[1]))
+      eraBandCache.set(b.era, { min: bandMin, max: bandMax })
+    }
 
     const sim = d3
       .forceSimulation(nodes)
@@ -176,11 +192,11 @@ function ForceGraph({
       )
       .force('charge', d3.forceManyBody().strength(-30).distanceMax(300))
       .force('x', isPortrait
-        ? d3.forceX<GraphNode>(centerX).strength(0.05)
-        : d3.forceX<GraphNode>((d) => timeScale(d.year)).strength(0.8))
+        ? d3.forceX<GraphNode>(getCategoryPos).strength(0.3)
+        : d3.forceX<GraphNode>((d) => timeScale(d.year)).strength(1.2))
       .force('y', isPortrait
-        ? d3.forceY<GraphNode>((d) => timeScale(d.year)).strength(0.8)
-        : d3.forceY<GraphNode>(centerY).strength(0.05))
+        ? d3.forceY<GraphNode>((d) => timeScale(d.year)).strength(1.2)
+        : d3.forceY<GraphNode>(getCategoryPos).strength(0.3))
       .force('collision', d3.forceCollide(NODE_RADIUS + 1))
       .alphaDecay(0.03)
       .velocityDecay(0.4)
@@ -188,6 +204,25 @@ function ForceGraph({
     let tickCount = 0
     sim.on('tick', () => {
       tickCount++
+
+      // Soft-clamp nodes toward their era band boundaries
+      const alpha = sim.alpha()
+      for (const n of nodes) {
+        if (n.x == null || n.y == null) continue
+        const band = eraBandCache.get(n.era as string)
+        if (!band) continue
+
+        const pos = isPortrait ? n.y : n.x
+        const margin = 8
+        if (pos < band.min - margin) {
+          if (isPortrait) n.y! += (band.min - margin - pos) * alpha * 0.8
+          else n.x! += (band.min - margin - pos) * alpha * 0.8
+        } else if (pos > band.max + margin) {
+          if (isPortrait) n.y! += (band.max + margin - pos) * alpha * 0.8
+          else n.x! += (band.max + margin - pos) * alpha * 0.8
+        }
+      }
+
       if (tickCount > 150 || sim.alpha() < 0.01) {
         sim.stop()
         rebuildQuadtree()
@@ -294,16 +329,24 @@ function ForceGraph({
       portraitRef.current = nowPortrait
 
       let newScale: d3.ScaleLinear<number, number>
+      const newGraphHeight = nowPortrait ? h : h - AXIS_SIZE
+      const newCrossStart = nowPortrait ? AXIS_SIZE + TIMELINE_PADDING : TIMELINE_PADDING
+      const newCrossEnd = nowPortrait ? w - TIMELINE_PADDING : newGraphHeight - TIMELINE_PADDING
+      const newCatScale = new Map<string, number>()
+      const newCatPad = (newCrossEnd - newCrossStart) / CATEGORIES.length
+      CATEGORIES.forEach((cat, i) => {
+        newCatScale.set(cat, newCrossStart + newCatPad * (i + 0.5))
+      })
+      const newGetCatPos = (d: GraphNode) => newCatScale.get(d.category) ?? (newCrossStart + newCrossEnd) / 2
+
       if (nowPortrait) {
         newScale = buildTimeScale(TIMELINE_PADDING, h - TIMELINE_PADDING)
-        const newCenterX = AXIS_SIZE + (w - AXIS_SIZE) / 2
-        sim.force('x', d3.forceX<GraphNode>(newCenterX).strength(0.05))
-        sim.force('y', d3.forceY<GraphNode>((d) => newScale(d.year)).strength(0.15))
+        sim.force('x', d3.forceX<GraphNode>(newGetCatPos).strength(0.3))
+        sim.force('y', d3.forceY<GraphNode>((d) => newScale(d.year)).strength(1.2))
       } else {
         newScale = buildTimeScale(TIMELINE_PADDING, w - TIMELINE_PADDING)
-        const newCenterY = (h - AXIS_SIZE) / 2
-        sim.force('x', d3.forceX<GraphNode>((d) => newScale(d.year)).strength(0.15))
-        sim.force('y', d3.forceY<GraphNode>(newCenterY).strength(0.05))
+        sim.force('x', d3.forceX<GraphNode>((d) => newScale(d.year)).strength(1.2))
+        sim.force('y', d3.forceY<GraphNode>(newGetCatPos).strength(0.3))
       }
       timeScaleRef.current = newScale
       sim.alpha(0.3).restart()

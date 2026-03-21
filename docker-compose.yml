@@ -11,7 +11,7 @@ services:
   backend:
     build: ./backend
     environment:
-      - MONGO_URL=${MONGO_URL}
+      - MONGO_URL=${MONGO_URL:-mongodb://admin:admin@mongo:27017/techrelative?authSource=admin}
       - PROXY_TOKEN=${PROXY_TOKEN}
       - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost}
     depends_on:
@@ -21,7 +21,7 @@ services:
     image: mongo:7
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER:-admin}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD:-admin}
     volumes:
       - mongo_data:/data/db
 

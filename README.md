@@ -131,3 +131,7 @@ npm run e2e
 Technology relationships and historical data were derived from _The History of Science and Technology_ by Bryan Bunch and Alexander Hellemans. All descriptions have been independently paraphrased. Biographical links and thumbnails are sourced from Wikipedia via the Wikimedia API.
 
 This is a non-commercial, educational portfolio project and is not affiliated with or endorsed by the original authors or publisher.
+
+## License
+
+The source code is licensed under [MIT](LICENSE). The technology dataset (`seed_data.json`) is derived from copyrighted material and is provided for educational/non-commercial use only.

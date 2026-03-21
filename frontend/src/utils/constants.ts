@@ -2,15 +2,15 @@ import type { Era, Category, EraBoundary } from '../types'
 
 // 9 eras — must match backend/src/models/Technology.ts ERAS
 export const ERA_COLORS: Record<Era, string> = {
-  Prehistoric: '#A67C52',
-  Neolithic: '#C9A84C',
-  Ancient: '#D4883E',
-  Classical: '#C2655A',
-  Medieval: '#8B4F6E',
-  'Early Modern': '#6B5B95',
-  Industrial: '#4A7C8F',
-  Modern: '#3A8FB7',
-  Information: '#22B573',
+  Prehistoric: '#C45858',
+  Neolithic: '#C47858',
+  Ancient: '#C49850',
+  Classical: '#B8B050',
+  Medieval: '#58A858',
+  'Early Modern': '#509E90',
+  Industrial: '#5888C0',
+  Modern: '#7068B8',
+  Information: '#8858B0',
 }
 
 // 18 categories — must match backend/src/models/Technology.ts CATEGORIES

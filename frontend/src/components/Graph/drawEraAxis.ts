@@ -15,6 +15,14 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha})`
 }
 
+// Precompute era color strings to avoid per-frame hex parsing
+const eraFillCache = new Map<string, string>()
+const eraGradCache = new Map<string, string>()
+for (const [era, hex] of Object.entries(ERA_COLORS)) {
+  eraFillCache.set(era, hexToRgba(hex, 0.04))
+  eraGradCache.set(era, hexToRgba(hex, 0.06))
+}
+
 interface DrawEraAxisParams {
   ctx: CanvasRenderingContext2D
   width: number
@@ -61,8 +69,7 @@ function drawPortraitAxis(
     const bh = yEnd - yStart
     if (yEnd < 0 || yStart > height) return
 
-    const eraColor = ERA_COLORS[b.era as Era] || '#666'
-    ctx.fillStyle = hexToRgba(eraColor, 0.04)
+    ctx.fillStyle = eraFillCache.get(b.era) || 'rgba(102,102,102,0.04)'
     ctx.fillRect(graphLeft, yStart, width - graphLeft, bh)
   })
 
@@ -72,13 +79,10 @@ function drawPortraitAxis(
     const yPos = t.y + t.k * timeScale(boundary)
     if (yPos < -GRADIENT_WIDTH || yPos > height + GRADIENT_WIDTH) continue
 
-    const prevColor = ERA_COLORS[visibleEras[i - 1].era as Era] || '#666'
-    const nextColor = ERA_COLORS[visibleEras[i].era as Era] || '#666'
-
     const grad = ctx.createLinearGradient(0, yPos - GRADIENT_WIDTH, 0, yPos + GRADIENT_WIDTH)
-    grad.addColorStop(0, hexToRgba(prevColor, 0.06))
+    grad.addColorStop(0, eraGradCache.get(visibleEras[i - 1].era) || 'transparent')
     grad.addColorStop(0.5, 'rgba(255,255,255,0.03)')
-    grad.addColorStop(1, hexToRgba(nextColor, 0.06))
+    grad.addColorStop(1, eraGradCache.get(visibleEras[i].era) || 'transparent')
     ctx.fillStyle = grad
     ctx.fillRect(graphLeft, yPos - GRADIENT_WIDTH, width - graphLeft, GRADIENT_WIDTH * 2)
   }
@@ -144,8 +148,7 @@ function drawLandscapeAxis(
     const bw = xEnd - xStart
     if (xEnd < 0 || xStart > width) return
 
-    const eraColor = ERA_COLORS[b.era as Era] || '#666'
-    ctx.fillStyle = hexToRgba(eraColor, 0.04)
+    ctx.fillStyle = eraFillCache.get(b.era) || 'rgba(102,102,102,0.04)'
     ctx.fillRect(xStart, 0, bw, graphBottom)
   })
 
@@ -155,13 +158,10 @@ function drawLandscapeAxis(
     const xPos = t.x + t.k * timeScale(boundary)
     if (xPos < -GRADIENT_WIDTH || xPos > width + GRADIENT_WIDTH) continue
 
-    const prevColor = ERA_COLORS[visibleEras[i - 1].era as Era] || '#666'
-    const nextColor = ERA_COLORS[visibleEras[i].era as Era] || '#666'
-
     const grad = ctx.createLinearGradient(xPos - GRADIENT_WIDTH, 0, xPos + GRADIENT_WIDTH, 0)
-    grad.addColorStop(0, hexToRgba(prevColor, 0.06))
+    grad.addColorStop(0, eraGradCache.get(visibleEras[i - 1].era) || 'transparent')
     grad.addColorStop(0.5, 'rgba(255,255,255,0.03)')
-    grad.addColorStop(1, hexToRgba(nextColor, 0.06))
+    grad.addColorStop(1, eraGradCache.get(visibleEras[i].era) || 'transparent')
     ctx.fillStyle = grad
     ctx.fillRect(xPos - GRADIENT_WIDTH, 0, GRADIENT_WIDTH * 2, graphBottom)
   }

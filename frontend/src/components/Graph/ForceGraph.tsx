@@ -172,6 +172,22 @@ function ForceGraph({
     })
     const getCategoryPos = (d: GraphNode) => categoryScale.get(d.category) ?? (crossStart + crossEnd) / 2
 
+    // Pre-position nodes at their target era/category positions (with jitter)
+    // so the simulation only needs to resolve collisions and links
+    for (const n of nodes) {
+      if (n.x != null && n.y != null) continue
+      const timePos = timeScale(n.year)
+      const catPos = getCategoryPos(n)
+      const jitter = () => (Math.random() - 0.5) * 30
+      if (isPortrait) {
+        n.x = catPos + jitter()
+        n.y = timePos + jitter()
+      } else {
+        n.x = timePos + jitter()
+        n.y = catPos + jitter()
+      }
+    }
+
     // Build era boundary lookup for clamping nodes within their era band
     const eraBandCache = new Map<string, { min: number; max: number }>()
     for (const b of ERA_BOUNDARIES) {
@@ -198,32 +214,34 @@ function ForceGraph({
         ? d3.forceY<GraphNode>((d) => timeScale(d.year)).strength(1.2)
         : d3.forceY<GraphNode>(getCategoryPos).strength(0.3))
       .force('collision', d3.forceCollide(NODE_RADIUS + 1))
-      .alphaDecay(0.03)
-      .velocityDecay(0.4)
+      .alphaDecay(0.05)
+      .velocityDecay(0.5)
 
     let tickCount = 0
     sim.on('tick', () => {
       tickCount++
 
-      // Soft-clamp nodes toward their era band boundaries
-      const alpha = sim.alpha()
-      for (const n of nodes) {
-        if (n.x == null || n.y == null) continue
-        const band = eraBandCache.get(n.era as string)
-        if (!band) continue
+      // Soft-clamp nodes toward their era band boundaries (every 3rd tick to save work)
+      if (tickCount % 3 === 0) {
+        const alpha = sim.alpha()
+        for (const n of nodes) {
+          if (n.x == null || n.y == null) continue
+          const band = eraBandCache.get(n.era as string)
+          if (!band) continue
 
-        const pos = isPortrait ? n.y : n.x
-        const margin = 8
-        if (pos < band.min - margin) {
-          if (isPortrait) n.y! += (band.min - margin - pos) * alpha * 0.8
-          else n.x! += (band.min - margin - pos) * alpha * 0.8
-        } else if (pos > band.max + margin) {
-          if (isPortrait) n.y! += (band.max + margin - pos) * alpha * 0.8
-          else n.x! += (band.max + margin - pos) * alpha * 0.8
+          const pos = isPortrait ? n.y : n.x
+          const margin = 8
+          if (pos < band.min - margin) {
+            if (isPortrait) n.y! += (band.min - margin - pos) * alpha * 0.8
+            else n.x! += (band.min - margin - pos) * alpha * 0.8
+          } else if (pos > band.max + margin) {
+            if (isPortrait) n.y! += (band.max + margin - pos) * alpha * 0.8
+            else n.x! += (band.max + margin - pos) * alpha * 0.8
+          }
         }
       }
 
-      if (tickCount > 150 || sim.alpha() < 0.01) {
+      if (tickCount > 120 || sim.alpha() < 0.01) {
         sim.stop()
         rebuildQuadtree()
       }

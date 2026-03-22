@@ -45,6 +45,7 @@ function ForceGraph({
   const timeScaleRef = useRef<d3.ScaleLinear<number, number> | null>(null)
   const drawRef = useRef<(() => void) | null>(null)
   const quadtreeRef = useRef<d3.Quadtree<GraphNode> | null>(null)
+  const zoomRef = useRef<d3.ZoomBehavior<HTMLCanvasElement, unknown> | null>(null)
   const portraitRef = useRef(window.matchMedia(MOBILE_QUERY).matches)
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
 
@@ -259,6 +260,7 @@ function ForceGraph({
         drawRef.current?.()
       })
 
+    zoomRef.current = zoom
     d3.select(canvas).call(zoom)
 
     // ─── MOUSE INTERACTION ──────────────────────────────────
@@ -388,6 +390,25 @@ function ForceGraph({
   useEffect(() => {
     draw()
   }, [colorBy, searchTerm, selectedId, draw])
+
+  // ─── FOCUS / RESET ZOOM ON SELECTION CHANGE ──────────────
+  useEffect(() => {
+    const canvas = canvasRef.current
+    const zoom = zoomRef.current
+    if (!canvas || !zoom) return
+
+    if (selectedId) {
+      const node = nodes.find((n) => n._id === selectedId)
+      if (!node || node.x == null || node.y == null) return
+      const scale = 2.5
+      const tx = canvas.width / 2 - node.x * scale
+      const ty = canvas.height / 2 - node.y * scale
+      const target = d3.zoomIdentity.translate(tx, ty).scale(scale)
+      d3.select(canvas).transition().duration(500).call(zoom.transform, target)
+    } else {
+      d3.select(canvas).transition().duration(500).call(zoom.transform, d3.zoomIdentity)
+    }
+  }, [selectedId, nodes])
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>

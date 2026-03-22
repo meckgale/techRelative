@@ -404,9 +404,9 @@ function ForceGraph({
       const tx = canvas.width / 2 - node.x * scale
       const ty = canvas.height / 2 - node.y * scale
       const target = d3.zoomIdentity.translate(tx, ty).scale(scale)
-      d3.select(canvas).transition().duration(500).call(zoom.transform, target)
+      d3.select(canvas).transition().duration(750).ease(d3.easeQuadOut).call(zoom.transform, target)
     } else {
-      d3.select(canvas).transition().duration(500).call(zoom.transform, d3.zoomIdentity)
+      d3.select(canvas).transition().duration(750).ease(d3.easeQuadOut).call(zoom.transform, d3.zoomIdentity)
     }
   }, [selectedId, nodes])
 

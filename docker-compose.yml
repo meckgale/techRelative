@@ -2,7 +2,8 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "80:80"
+      - "3000:80"
+    restart: unless-stopped
     environment:
       - PROXY_TOKEN=${PROXY_TOKEN}
     depends_on:
@@ -10,6 +11,7 @@ services:
 
   backend:
     build: ./backend
+    restart: unless-stopped
     environment:
       - MONGO_URL=${MONGO_URL:-mongodb://admin:admin@mongo:27017/techrelative?authSource=admin}
       - PROXY_TOKEN=${PROXY_TOKEN}
@@ -19,6 +21,7 @@ services:
 
   mongo:
     image: mongo:7
+    restart: unless-stopped
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER:-admin}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD:-admin}

@@ -37,6 +37,9 @@ export default function Sidebar({ nodeCount, edgeCount, loading }: SidebarProps)
   const setViewMode = useAppStore((s) => s.setViewMode)
   const selectNode = useAppStore((s) => s.selectNode)
   const selectPerson = useAppStore((s) => s.selectPerson)
+  const recentlyViewed = useAppStore((s) => s.recentlyViewed)
+  const navigateToTech = useAppStore((s) => s.navigateToTech)
+  const clearRecent = useAppStore((s) => s.clearRecent)
 
   const { stats } = useStats()
   const eras = stats?.eras || ERAS
@@ -250,6 +253,38 @@ export default function Sidebar({ nodeCount, edgeCount, loading }: SidebarProps)
         <button className="clear-btn" onClick={clearAll}>
           Clear all filters
         </button>
+      )}
+
+      {recentlyViewed.length > 0 && (
+        <div className="filter-section">
+          <div className="recent-header">
+            <label className="filter-label">Recently viewed</label>
+            <button className="recent-clear" onClick={clearRecent}>
+              clear
+            </button>
+          </div>
+          <ul className="recent-list">
+            {recentlyViewed.map((item) => (
+              <li key={item.id}>
+                <button
+                  className="recent-item"
+                  onClick={() => {
+                    if (item.type === 'person') {
+                      selectPerson(item.id)
+                    } else {
+                      navigateToTech(item.id)
+                    }
+                  }}
+                >
+                  <span className="recent-item-name">{item.name}</span>
+                  <span className="recent-item-meta">
+                    {item.yearDisplay} · {item.category}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {loading && <div className="loading-indicator">Loading graph…</div>}

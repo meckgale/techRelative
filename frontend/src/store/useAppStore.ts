@@ -1,5 +1,23 @@
 import { create } from 'zustand'
-import type { Filters, ViewMode, ColorBy } from '../types'
+import type { Filters, ViewMode, ColorBy, RecentItem } from '../types'
+
+const RECENT_KEY = 'techRelative:recentlyViewed'
+const MAX_RECENT = 15
+
+function loadRecent(): RecentItem[] {
+  try {
+    const raw = localStorage.getItem(RECENT_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch {
+    return []
+  }
+}
+
+function saveRecent(items: RecentItem[]) {
+  try {
+    localStorage.setItem(RECENT_KEY, JSON.stringify(items))
+  } catch { /* quota exceeded — ignore */ }
+}
 
 interface AppState {
   // ── UI State ────────────────────────────────────────────────
@@ -10,6 +28,7 @@ interface AppState {
   selectedPerson: string | null
   viewMode: ViewMode
   sidebarOpen: boolean
+  recentlyViewed: RecentItem[]
 
   // ── Actions ─────────────────────────────────────────────────
   setFilters: (filters: Filters) => void
@@ -24,6 +43,8 @@ interface AppState {
   clearSelection: () => void
   clearPerson: () => void
   closeDetail: () => void
+  addRecent: (item: Omit<RecentItem, 'timestamp'>) => void
+  clearRecent: () => void
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -34,6 +55,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   selectedPerson: null,
   viewMode: 'technology',
   sidebarOpen: false,
+  recentlyViewed: loadRecent(),
 
   setFilters: (filters) => set({
     filters,
@@ -92,6 +114,19 @@ export const useAppStore = create<AppState>((set, get) => ({
     selectedId: null,
     selectedPerson: null,
   }),
+
+  addRecent: (item) => {
+    const { recentlyViewed } = get()
+    const filtered = recentlyViewed.filter((r) => r.id !== item.id)
+    const updated = [{ ...item, timestamp: Date.now() }, ...filtered].slice(0, MAX_RECENT)
+    saveRecent(updated)
+    set({ recentlyViewed: updated })
+  },
+
+  clearRecent: () => {
+    localStorage.removeItem(RECENT_KEY)
+    set({ recentlyViewed: [] })
+  },
 }))
 
 // Selector for the active selected ID (depends on viewMode)

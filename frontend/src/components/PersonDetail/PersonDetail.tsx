@@ -19,7 +19,23 @@ function PersonDetail({ onBack }: PersonDetailProps) {
   const navigateToTech = useAppStore((s) => s.navigateToTech)
   const clearPerson = useAppStore((s) => s.clearPerson)
 
+  const addRecent = useAppStore((s) => s.addRecent)
+
   const { person, contributions, loading, error, retry } = usePersonDetail(personName)
+
+  useEffect(() => {
+    if (person) {
+      addRecent({
+        id: person.name,
+        name: person.name,
+        yearDisplay: person.activeFrom === person.activeTo
+          ? formatYear(person.activeFrom)
+          : `${formatYear(person.activeFrom)} – ${formatYear(person.activeTo)}`,
+        category: person.categories[0] as Category,
+        type: 'person',
+      })
+    }
+  }, [person, addRecent])
 
   useEffect(() => {
     if (!personName) return

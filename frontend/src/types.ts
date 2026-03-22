@@ -182,6 +182,15 @@ export interface Filters {
 export type ViewMode = 'technology' | 'person'
 export type ColorBy = 'era' | 'category'
 
+export interface RecentItem {
+  id: string
+  name: string
+  yearDisplay: string
+  category: Category
+  type: 'technology' | 'person'
+  timestamp: number
+}
+
 export interface EraBoundary {
   era: Era
   start: number

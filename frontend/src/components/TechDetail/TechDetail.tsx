@@ -14,8 +14,21 @@ function TechDetail() {
   const selectPerson = useAppStore((s) => s.selectPerson)
   const navigateToTech = useAppStore((s) => s.navigateToTech)
   const clearSelection = useAppStore((s) => s.clearSelection)
+  const addRecent = useAppStore((s) => s.addRecent)
 
   const { tech, relations, loading, error, retry } = useTechDetail(techId)
+
+  useEffect(() => {
+    if (tech) {
+      addRecent({
+        id: tech._id,
+        name: tech.name,
+        yearDisplay: tech.yearDisplay,
+        category: tech.category as Category,
+        type: 'technology',
+      })
+    }
+  }, [tech, addRecent])
 
   const related = useMemo(() => {
     if (!techId || !relations.length) return [] as RelatedNode[]

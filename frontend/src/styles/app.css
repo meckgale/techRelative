@@ -242,6 +242,65 @@ body,
   border-color: rgba(255, 255, 255, 0.15);
 }
 
+/* ── Recently viewed ────────────────────────────────────── */
+.recent-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.recent-clear {
+  background: none;
+  border: none;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s;
+}
+.recent-clear:hover {
+  color: var(--text-secondary);
+}
+.recent-list {
+  list-style: none;
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-surface);
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg-panel) transparent;
+}
+.recent-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  padding: 6px 10px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.recent-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+.recent-list li:last-child .recent-item {
+  border-bottom: none;
+}
+.recent-item-name {
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--accent);
+}
+.recent-item-meta {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+}
+
 .loading-indicator {
   font-size: 11px;
   font-family: var(--font-mono);

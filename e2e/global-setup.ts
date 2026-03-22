@@ -11,7 +11,7 @@ async function waitForPort(port: number, timeout = 30000): Promise<void> {
   const start = Date.now();
   while (Date.now() - start < timeout) {
     try {
-      const res = await fetch(`http://127.0.0.1:${port}`).catch(() => null);
+      const res = await fetch(`http://localhost:${port}`).catch(() => null);
       if (res) return;
     } catch {}
     await new Promise((r) => setTimeout(r, 500));

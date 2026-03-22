@@ -107,7 +107,7 @@ function PersonDetail({ onBack }: PersonDetailProps) {
           {person.regions.length > 0 && (
             <div className="detail-field">
               <span className="detail-field-label">Region</span>
-              {person.regions.join(', ')}
+              {[...new Set(person.regions)].join(', ')}
             </div>
           )}
 

@@ -89,7 +89,7 @@ cp backend/.env.example backend/.env
 docker compose up --build
 ```
 
-The app will be available at `http://localhost`.
+The app will be available at `http://localhost:3000`.
 
 ### Seed the Database
 

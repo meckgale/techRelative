@@ -690,6 +690,29 @@ body,
   100% { opacity: 1;   transform: scale(1.2); }
 }
 
+/* ── Reset view button ─────────────────────────────────── */
+.reset-view-btn {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  z-index: 30;
+  width: 40px;
+  height: 40px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+}
+.reset-view-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-surface);
+}
+
 /* ── Graph empty state ─────────────────────────────────── */
 .graph-empty {
   position: absolute;
@@ -806,6 +829,13 @@ body,
 
   .detail-close {
     top: 8px;
+    right: 12px;
+  }
+
+  .reset-view-btn {
+    width: 44px;
+    height: 44px;
+    bottom: 12px;
     right: 12px;
   }
 

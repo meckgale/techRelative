@@ -48,6 +48,7 @@ function ForceGraph({
   const zoomRef = useRef<d3.ZoomBehavior<HTMLCanvasElement, unknown> | null>(null)
   const portraitRef = useRef(window.matchMedia(MOBILE_QUERY).matches)
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
+  const [isZoomed, setIsZoomed] = useState(false)
 
   const { timeExtent, visibleEras, buildTimeScale } = useTimeScale(nodes)
 
@@ -257,6 +258,9 @@ function ForceGraph({
       .scaleExtent([0.1, 8])
       .on('zoom', (event: d3.D3ZoomEvent<HTMLCanvasElement, unknown>) => {
         transformRef.current = event.transform
+        const t = event.transform
+        const zoomed = Math.abs(t.k - 1) > 0.01 || Math.abs(t.x) > 1 || Math.abs(t.y) > 1
+        setIsZoomed(zoomed)
         drawRef.current?.()
       })
 
@@ -419,24 +423,27 @@ function ForceGraph({
     draw()
   }, [colorBy, searchTerm, selectedId, draw])
 
-  // ─── FOCUS / RESET ZOOM ON SELECTION CHANGE ──────────────
+  // ─── FOCUS ZOOM ON SELECTION ────────────────────────────
   useEffect(() => {
     const canvas = canvasRef.current
     const zoom = zoomRef.current
-    if (!canvas || !zoom) return
+    if (!canvas || !zoom || !selectedId) return
 
-    if (selectedId) {
-      const node = nodes.find((n) => n._id === selectedId)
-      if (!node || node.x == null || node.y == null) return
-      const scale = 2.5
-      const tx = canvas.width / 2 - node.x * scale
-      const ty = canvas.height / 2 - node.y * scale
-      const target = d3.zoomIdentity.translate(tx, ty).scale(scale)
-      d3.select(canvas).transition().duration(750).ease(d3.easeQuadOut).call(zoom.transform, target)
-    } else {
-      d3.select(canvas).transition().duration(750).ease(d3.easeQuadOut).call(zoom.transform, d3.zoomIdentity)
-    }
+    const node = nodes.find((n) => n._id === selectedId)
+    if (!node || node.x == null || node.y == null) return
+    const scale = 2.5
+    const tx = canvas.width / 2 - node.x * scale
+    const ty = canvas.height / 2 - node.y * scale
+    const target = d3.zoomIdentity.translate(tx, ty).scale(scale)
+    d3.select(canvas).transition().duration(750).ease(d3.easeQuadOut).call(zoom.transform, target)
   }, [selectedId, nodes])
+
+  const resetView = useCallback(() => {
+    const canvas = canvasRef.current
+    const zoom = zoomRef.current
+    if (!canvas || !zoom) return
+    d3.select(canvas).transition().duration(750).ease(d3.easeQuadOut).call(zoom.transform, d3.zoomIdentity)
+  }, [])
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', userSelect: 'none', WebkitUserSelect: 'none' }}>
@@ -459,6 +466,20 @@ function ForceGraph({
         </div>
       )}
       {tooltip && <GraphTooltip tooltip={tooltip} getColor={getColor} />}
+      {isZoomed && (
+        <button
+          className="reset-view-btn"
+          onClick={resetView}
+          aria-label="Reset view"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="4 14 4 20 10 20" />
+            <polyline points="20 10 20 4 14 4" />
+            <polyline points="14 20 20 20 20 14" />
+            <polyline points="4 10 4 4 10 4" />
+          </svg>
+        </button>
+      )}
     </div>
   )
 }

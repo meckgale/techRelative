@@ -120,13 +120,6 @@ function PersonDetail({ onBack }: PersonDetailProps) {
             </div>
           </div>
 
-          {person.regions.length > 0 && (
-            <div className="detail-field">
-              <span className="detail-field-label">Region</span>
-              {person.regions.join(', ')}
-            </div>
-          )}
-
           {person.tags.length > 0 && (
             <div className="detail-tags">
               {person.tags.map((t) => (

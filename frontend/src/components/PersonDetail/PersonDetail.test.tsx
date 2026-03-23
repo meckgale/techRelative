@@ -9,7 +9,6 @@ const mockPerson = {
   activeTo: 1687,
   eras: ["Early Modern" as const],
   categories: ["Mathematics" as const, "Physics" as const],
-  regions: ["Europe"],
   tags: ["calculus", "mechanics"],
   contributionCount: 2,
   wikipediaUrl: "https://en.wikipedia.org/wiki/Isaac_Newton",
@@ -111,7 +110,6 @@ describe("PersonDetail", () => {
     // "Mathematics" and "Physics" appear in both badges and contribution list
     expect(screen.getAllByText("Mathematics").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("Physics").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("Europe")).toBeInTheDocument();
     expect(screen.getByText("calculus")).toBeInTheDocument();
     expect(screen.getByText("mechanics")).toBeInTheDocument();
     expect(screen.getByText("Contributions (2)")).toBeInTheDocument();
@@ -158,7 +156,6 @@ describe("PersonDetail", () => {
     mockUsePersonDetail.mockReturnValue({
       person: {
         ...mockPerson,
-        regions: [],
         tags: [],
         wikipediaUrl: null,
         thumbnailUrl: null,

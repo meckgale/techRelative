@@ -3,7 +3,6 @@ import mongoose from "mongoose";
 import { Technology, ERAS, CATEGORIES } from "../models/Technology.js";
 import { Relation } from "../models/Relation.js";
 import { Person } from "../models/Person.js";
-import { normalizeRegions } from "../utils.js";
 import {
   validate,
   technologiesQuery,
@@ -232,7 +231,6 @@ router.get("/persons/:name", validate(personNameParam, "params"), async (req: Re
     const years = technologies.map((t) => t.year);
     const eras = [...new Set(technologies.map((t) => t.era))];
     const categories = [...new Set(technologies.map((t) => t.category))];
-    const regions = normalizeRegions(technologies.map((t) => t.region));
     const tags = [...new Set(technologies.flatMap((t) => t.tags || []))];
 
     const contributions = technologies.map((t) => ({
@@ -252,7 +250,6 @@ router.get("/persons/:name", validate(personNameParam, "params"), async (req: Re
         activeTo: Math.max(...years),
         eras,
         categories,
-        regions,
         tags,
         contributionCount: technologies.length,
         wikipediaUrl: personDoc?.wikipediaUrl || null,

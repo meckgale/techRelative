@@ -131,7 +131,6 @@ export interface PersonDetailData {
   activeTo: number
   eras: Era[]
   categories: Category[]
-  regions: string[]
   tags: string[]
   contributionCount: number
   wikipediaUrl: string | null

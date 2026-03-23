@@ -1,10 +1,11 @@
 import { test, expect } from "@playwright/test";
+import { waitForDataLoaded, openSidebar } from "./helpers";
 
 test.describe("Filters", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
-    // Wait for data to load
-    await expect(page.locator(".meta-counts")).toBeVisible({ timeout: 30000 });
+    await waitForDataLoaded(page);
+    await openSidebar(page);
   });
 
   test("clicking an era chip activates it and updates counts", async ({ page }) => {

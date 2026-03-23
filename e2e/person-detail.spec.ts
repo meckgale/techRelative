@@ -1,13 +1,15 @@
 import { test, expect } from "@playwright/test";
+import { waitForDataLoaded, openSidebar } from "./helpers";
 
 test.describe("Person Detail", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator(".meta-counts")).toBeVisible({ timeout: 30000 });
+    await waitForDataLoaded(page);
   });
 
   test("clicking a person link from tech detail opens person panel", async ({ page }) => {
     // Open Calculus detail
+    await openSidebar(page);
     const input = page.locator(".search-input");
     await input.fill("Calculus");
     await expect(page.locator(".search-results")).toBeVisible({ timeout: 10000 });
@@ -23,6 +25,7 @@ test.describe("Person Detail", () => {
 
   test("person detail shows contributions", async ({ page }) => {
     // Navigate to person via tech detail
+    await openSidebar(page);
     const input = page.locator(".search-input");
     await input.fill("Calculus");
     await expect(page.locator(".search-results")).toBeVisible({ timeout: 10000 });
@@ -38,6 +41,7 @@ test.describe("Person Detail", () => {
 
   test("person detail shows back button when navigating from tech", async ({ page }) => {
     // Open tech detail then person
+    await openSidebar(page);
     const input = page.locator(".search-input");
     await input.fill("Calculus");
     await expect(page.locator(".search-results")).toBeVisible({ timeout: 10000 });
@@ -50,6 +54,7 @@ test.describe("Person Detail", () => {
 
   test("clicking a contribution navigates to that tech detail", async ({ page }) => {
     // Navigate to person via tech
+    await openSidebar(page);
     const input = page.locator(".search-input");
     await input.fill("Calculus");
     await expect(page.locator(".search-results")).toBeVisible({ timeout: 10000 });
@@ -70,6 +75,7 @@ test.describe("Person Detail", () => {
   });
 
   test("close button dismisses person detail", async ({ page }) => {
+    await openSidebar(page);
     const input = page.locator(".search-input");
     await input.fill("Calculus");
     await expect(page.locator(".search-results")).toBeVisible({ timeout: 10000 });

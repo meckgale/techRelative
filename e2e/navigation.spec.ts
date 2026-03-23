@@ -1,13 +1,15 @@
 import { test, expect } from "@playwright/test";
+import { waitForDataLoaded, openSidebar } from "./helpers";
 
 test.describe("Navigation", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator(".meta-counts")).toBeVisible({ timeout: 30000 });
+    await waitForDataLoaded(page);
   });
 
   test("full navigation flow: tech -> person -> contribution -> tech", async ({ page }) => {
     // 1. Search and open Calculus
+    await openSidebar(page);
     const input = page.locator(".search-input");
     await input.fill("Calculus");
     await expect(page.locator(".search-results")).toBeVisible({ timeout: 10000 });
@@ -33,6 +35,7 @@ test.describe("Navigation", () => {
 
   test("navigating between related technologies", async ({ page }) => {
     // Open Classical Mechanics (which has relations)
+    await openSidebar(page);
     const input = page.locator(".search-input");
     await input.fill("Classical");
     await expect(page.locator(".search-results")).toBeVisible({ timeout: 10000 });

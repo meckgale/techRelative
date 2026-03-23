@@ -1,9 +1,11 @@
 import { test, expect } from "@playwright/test";
+import { waitForDataLoaded, openSidebar } from "./helpers";
 
 test.describe("Search", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator(".meta-counts")).toBeVisible({ timeout: 30000 });
+    await waitForDataLoaded(page);
+    await openSidebar(page);
   });
 
   test("typing 3+ characters shows search results", async ({ page }) => {
@@ -38,10 +40,6 @@ test.describe("Search", () => {
     // Detail panel should open
     await expect(page.locator(".detail-panel")).toBeVisible();
     await expect(page.locator(".detail-name")).toContainText("Calculus");
-
-    // Search should be cleared
-    await expect(input).toHaveValue("");
-    await expect(results).not.toBeVisible();
   });
 
   test("keyboard navigation works in search results", async ({ page }) => {

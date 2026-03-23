@@ -1,4 +1,4 @@
-import { memo, useMemo, useEffect } from 'react'
+import { memo, useMemo, useEffect, useRef } from 'react'
 import { useTechDetail } from '../../hooks/useGraphData'
 import { useAppStore } from '../../store/useAppStore'
 import { ERA_COLORS, CATEGORY_COLORS } from '../../utils/constants'
@@ -16,7 +16,12 @@ function TechDetail() {
   const clearSelection = useAppStore((s) => s.clearSelection)
   const addRecent = useAppStore((s) => s.addRecent)
 
+  const panelRef = useRef<HTMLDivElement>(null)
   const { tech, relations, loading, error, retry } = useTechDetail(techId)
+
+  useEffect(() => {
+    panelRef.current?.scrollTo?.(0, 0)
+  }, [techId])
 
   useEffect(() => {
     if (tech) {
@@ -56,7 +61,7 @@ function TechDetail() {
   if (!techId) return null
 
   return (
-    <div className="detail-panel">
+    <div className="detail-panel" ref={panelRef}>
       <button className="detail-close" onClick={clearSelection}>
         ✕
       </button>

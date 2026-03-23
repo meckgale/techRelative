@@ -41,6 +41,7 @@ export default async function globalSetup() {
     env: { ...process.env, MONGO_URL: uri, PORT: "3001" },
     stdio: "pipe",
     shell: true,
+    detached: true,
   });
   backend.stdout?.on("data", (d) => process.stdout.write(`[backend] ${d}`));
   backend.stderr?.on("data", (d) => process.stderr.write(`[backend:err] ${d}`));
@@ -52,6 +53,7 @@ export default async function globalSetup() {
     env: { ...process.env },
     stdio: "pipe",
     shell: true,
+    detached: true,
   });
   frontend.stdout?.on("data", (d) => process.stdout.write(`[frontend] ${d}`));
   frontend.stderr?.on("data", (d) => process.stderr.write(`[frontend:err] ${d}`));

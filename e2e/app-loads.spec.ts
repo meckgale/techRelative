@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { openSidebar } from "./helpers";
 
 test.describe("App loads", () => {
   test("page loads with logo and graph", async ({ page }) => {
@@ -14,6 +15,7 @@ test.describe("App loads", () => {
 
   test("sidebar shows node and edge counts after loading", async ({ page }) => {
     await page.goto("/");
+    await openSidebar(page);
 
     // Wait for counts to appear (data is loaded)
     const counts = page.locator(".meta-counts");

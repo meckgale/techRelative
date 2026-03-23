@@ -1,4 +1,4 @@
-import { memo, useEffect } from 'react'
+import { memo, useEffect, useRef } from 'react'
 import { usePersonDetail } from '../../hooks/useGraphData'
 import { useAppStore } from '../../store/useAppStore'
 import { ERA_COLORS, CATEGORY_COLORS } from '../../utils/constants'
@@ -21,7 +21,12 @@ function PersonDetail({ onBack }: PersonDetailProps) {
 
   const addRecent = useAppStore((s) => s.addRecent)
 
+  const panelRef = useRef<HTMLDivElement>(null)
   const { person, contributions, loading, error, retry } = usePersonDetail(personName)
+
+  useEffect(() => {
+    panelRef.current?.scrollTo?.(0, 0)
+  }, [personName])
 
   useEffect(() => {
     if (person) {
@@ -49,7 +54,7 @@ function PersonDetail({ onBack }: PersonDetailProps) {
   if (!personName) return null
 
   return (
-    <div className="detail-panel">
+    <div className="detail-panel" ref={panelRef}>
       <button className="detail-close" onClick={closeDetail}>
         ✕
       </button>

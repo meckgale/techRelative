@@ -1,9 +1,11 @@
 import { test, expect } from "@playwright/test";
+import { waitForDataLoaded, openSidebar } from "./helpers";
 
 test.describe("View Mode", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator(".meta-counts")).toBeVisible({ timeout: 30000 });
+    await waitForDataLoaded(page);
+    await openSidebar(page);
   });
 
   test("defaults to technology view", async ({ page }) => {
@@ -28,6 +30,9 @@ test.describe("View Mode", () => {
     await expect(page.locator(".search-results")).toBeVisible({ timeout: 10000 });
     await page.locator(".search-result-item", { hasText: "Calculus" }).click();
     await expect(page.locator(".detail-panel")).toBeVisible();
+
+    // Re-open sidebar on mobile (it closes after search selection)
+    await openSidebar(page);
 
     // Switch view mode
     await page.locator(".toggle-btn", { hasText: "person" }).click();

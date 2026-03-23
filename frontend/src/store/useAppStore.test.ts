@@ -32,7 +32,7 @@ describe("useAppStore", () => {
   });
 
   describe("setFilters", () => {
-    it("updates filters and clears selection + sidebar", () => {
+    it("updates filters and clears selection but keeps sidebar open", () => {
       useAppStore.setState({ selectedId: "abc", selectedPerson: "Newton", sidebarOpen: true });
       getState().setFilters({ era: "Ancient", category: "" });
 
@@ -40,7 +40,7 @@ describe("useAppStore", () => {
       expect(s.filters).toEqual({ era: "Ancient", category: "" });
       expect(s.selectedId).toBeNull();
       expect(s.selectedPerson).toBeNull();
-      expect(s.sidebarOpen).toBe(false);
+      expect(s.sidebarOpen).toBe(true);
     });
   });
 

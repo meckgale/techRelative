@@ -320,21 +320,48 @@ function ForceGraph({
       setTooltip(null)
     }
 
+    let touchStartNode: GraphNode | null = null
+
+    const handleTouchStart = (event: TouchEvent) => {
+      if (event.touches.length !== 1) {
+        touchStartNode = null
+        return
+      }
+      const touch = event.touches[0]
+      const rect = canvas.getBoundingClientRect()
+      const found = findNode(touch.clientX - rect.left, touch.clientY - rect.top) ?? null
+      touchStartNode = found
+
+      if (found) {
+        const selId = selectedIdRef.current
+        if (selId) {
+          const selNeighbors = adjMap.current.get(selId)?.neighbors
+          const isNeighbor = found._id === selId || selNeighbors?.has(found._id)
+          if (!isNeighbor) return
+        }
+        hoveredRef.current = found
+        setTooltip({ x: touch.clientX, y: touch.clientY, node: found })
+        drawRef.current?.()
+      }
+    }
+
     const handleTouchEnd = (event: TouchEvent) => {
       if (event.changedTouches.length !== 1) return
       const touch = event.changedTouches[0]
       const rect = canvas.getBoundingClientRect()
       const found = findNode(touch.clientX - rect.left, touch.clientY - rect.top)
-      if (found) {
+      if (found && found === touchStartNode) {
         event.preventDefault()
         selectNode(found._id)
-        hoveredRef.current = null
-        setTooltip(null)
       }
+      hoveredRef.current = null
+      setTooltip(null)
+      touchStartNode = null
     }
 
     canvas.addEventListener('mousemove', handleMove)
     canvas.addEventListener('click', handleClick)
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: true })
     canvas.addEventListener('touchend', handleTouchEnd, { passive: false })
 
     // ─── RESIZE + ORIENTATION CHANGE ──────────────────────
@@ -380,6 +407,7 @@ function ForceGraph({
       sim.stop()
       canvas.removeEventListener('mousemove', handleMove)
       canvas.removeEventListener('click', handleClick)
+      canvas.removeEventListener('touchstart', handleTouchStart)
       canvas.removeEventListener('touchend', handleTouchEnd)
       resizeObs.disconnect()
       mq.removeEventListener('change', handleOrientationOrResize)

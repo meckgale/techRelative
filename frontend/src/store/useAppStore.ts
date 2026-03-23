@@ -61,7 +61,6 @@ export const useAppStore = create<AppState>((set, get) => ({
     filters,
     selectedId: null,
     selectedPerson: null,
-    sidebarOpen: false,
   }),
 
   setColorBy: (colorBy) => set({ colorBy }),

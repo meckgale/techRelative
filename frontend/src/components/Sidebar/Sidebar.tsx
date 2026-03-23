@@ -103,6 +103,10 @@ export default function Sidebar({ nodeCount, edgeCount, loading }: SidebarProps)
     setSearchResults([])
     setSearchTerm('')
     setActiveIdx(-1)
+    // Dismiss soft keyboard on mobile
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur()
+    }
   }
 
   const handleSearchKeyDown = (e: React.KeyboardEvent) => {

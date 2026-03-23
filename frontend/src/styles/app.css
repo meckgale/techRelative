@@ -713,7 +713,7 @@ body,
   }
 
   .sidebar-header {
-    padding-left: 44px;
+    padding-top: 48px;
   }
 
   .sidebar-backdrop {
@@ -729,6 +729,7 @@ body,
   .sidebar-backdrop.visible {
     opacity: 1;
     pointer-events: auto;
+    touch-action: none;
   }
 
   /* ── Detail panel → bottom sheet ─────────────────────── */
@@ -739,8 +740,8 @@ body,
     right: 0;
     width: 100%;
     max-width: 100%;
-    height: 60vh;
-    height: 60dvh;
+    height: 45vh;
+    height: 45dvh;
     max-height: 80vh;
     max-height: 80dvh;
     border-left: none;

@@ -12,7 +12,7 @@ interface RelatedNode {
 function TechDetail() {
   const techId = useAppStore((s) => s.selectedId)
   const selectPerson = useAppStore((s) => s.selectPerson)
-  const selectNode = useAppStore((s) => s.selectNode)
+  const navigateToTech = useAppStore((s) => s.navigateToTech)
   const clearSelection = useAppStore((s) => s.clearSelection)
   const addRecent = useAppStore((s) => s.addRecent)
 
@@ -136,7 +136,7 @@ function TechDetail() {
                   <button
                     key={rel._id}
                     className="related-link"
-                    onClick={() => selectNode(rel._id)}
+                    onClick={() => navigateToTech(rel._id)}
                   >
                     {rel.name}
                   </button>

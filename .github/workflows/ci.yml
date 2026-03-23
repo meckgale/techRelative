@@ -111,5 +111,6 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd ~/techrelative
-            git pull origin main
+            git fetch origin main
+            git reset --hard origin/main
             docker compose up --build -d

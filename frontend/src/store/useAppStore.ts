@@ -95,11 +95,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
-  selectPerson: (name) => set({ selectedPerson: name }),
+  selectPerson: (name) => set({ selectedPerson: name, sidebarOpen: false }),
 
   navigateToTech: (id) => set({
     selectedPerson: null,
     selectedId: id,
+    sidebarOpen: false,
   }),
 
   clearSelection: () => set({

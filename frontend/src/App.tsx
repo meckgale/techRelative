@@ -31,13 +31,15 @@ export default function App() {
 
   return (
     <div className="app-layout">
-      <button
-        className="sidebar-toggle"
-        onClick={toggleSidebar}
-        aria-label="Toggle sidebar"
-      >
-        {sidebarOpen ? '✕' : '☰'}
-      </button>
+      {!sidebarOpen && (
+        <button
+          className="sidebar-toggle"
+          onClick={toggleSidebar}
+          aria-label="Open sidebar"
+        >
+          ☰
+        </button>
+      )}
 
       <div
         className={`sidebar-backdrop ${sidebarOpen ? 'visible' : ''}`}

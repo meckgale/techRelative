@@ -47,18 +47,54 @@ body,
   height: 100dvh;
   background: var(--bg-panel);
   border-right: 1px solid var(--border);
-  overflow-y: auto;
-  padding: 20px 16px;
+  overflow-y: hidden;
   display: flex;
   flex-direction: column;
-  gap: 18px;
   scrollbar-width: thin;
   scrollbar-color: var(--bg-surface) transparent;
 }
 
 .sidebar-header {
-  padding-bottom: 12px;
+  flex-shrink: 0;
+  padding: 20px 16px 12px;
   border-bottom: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+
+.sidebar-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebar-close {
+  display: none;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 16px;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s;
+  flex-shrink: 0;
+}
+.sidebar-close:hover {
+  color: var(--text-primary);
+}
+
+.sidebar-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg-surface) transparent;
 }
 
 .logo {
@@ -712,8 +748,8 @@ body,
     transform: translateX(0);
   }
 
-  .sidebar-header {
-    padding-top: 48px;
+  .sidebar-close {
+    display: flex;
   }
 
   .sidebar-backdrop {

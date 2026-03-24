@@ -219,6 +219,37 @@ function ForceGraph({
       .alphaDecay(0.05)
       .velocityDecay(0.5)
 
+    const fitToNodes = () => {
+      if (!nodes.length || selectedIdRef.current) return
+
+      let minX = Infinity, maxX = -Infinity
+      let minY = Infinity, maxY = -Infinity
+      for (const n of nodes) {
+        if (n.x == null || n.y == null) continue
+        minX = Math.min(minX, n.x)
+        maxX = Math.max(maxX, n.x)
+        minY = Math.min(minY, n.y)
+        maxY = Math.max(maxY, n.y)
+      }
+      if (!isFinite(minX)) return
+
+      const pad = 60
+      const bw = maxX - minX + pad * 2
+      const bh = maxY - minY + pad * 2
+      const scale = Math.min(width / bw, height / bh, 1.5)
+      const cx = (minX + maxX) / 2
+      const cy = (minY + maxY) / 2
+      const target = d3.zoomIdentity
+        .translate(width / 2 - cx * scale, height / 2 - cy * scale)
+        .scale(scale)
+
+      d3.select(canvas)
+        .transition()
+        .duration(750)
+        .ease(d3.easeQuadOut)
+        .call(zoom.transform, target)
+    }
+
     let tickCount = 0
     sim.on('tick', () => {
       tickCount++
@@ -246,6 +277,7 @@ function ForceGraph({
       if (tickCount > 120 || sim.alpha() < 0.01) {
         sim.stop()
         rebuildQuadtree()
+        fitToNodes()
       }
       drawRef.current?.()
     })

@@ -58,7 +58,9 @@ export function useAutoSelect() {
       .then((res) => res.ok ? res.json() : null)
       .then((data) => {
         const tech = data?.technologies?.[0]
-        if (tech?._id) selectNode(tech._id)
+        if (tech?._id && !useAppStore.getState().selectedId) {
+          selectNode(tech._id)
+        }
       })
       .catch(() => { /* silent — not critical */ })
   }, [selectNode])

@@ -14,3 +14,12 @@ export async function openSidebar(page: Page) {
     await expect(page.locator(".sidebar.open")).toBeVisible();
   }
 }
+
+/** Type into the search input reliably across all browsers.
+ *  Clears existing text first, then types character by character
+ *  so React's controlled onChange fires consistently. */
+export async function searchFor(page: Page, text: string) {
+  const input = page.locator(".search-input");
+  await input.clear();
+  await input.pressSequentially(text, { delay: 30 });
+}

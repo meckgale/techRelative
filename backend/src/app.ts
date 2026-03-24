@@ -21,7 +21,7 @@ app.use(cors({ origin: CORS_ORIGIN }));
 
 app.use(compression());
 app.use(responseTime());
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
 
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000,

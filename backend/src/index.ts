@@ -30,4 +30,14 @@ connectDB().then(() => {
 
   process.on("SIGTERM", shutdown);
   process.on("SIGINT", shutdown);
+
+  process.on("uncaughtException", (err) => {
+    console.error("Uncaught exception:", err);
+    shutdown();
+  });
+
+  process.on("unhandledRejection", (reason) => {
+    console.error("Unhandled rejection:", reason);
+    shutdown();
+  });
 });

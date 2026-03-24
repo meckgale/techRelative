@@ -142,6 +142,7 @@ export default function Sidebar({ nodeCount, edgeCount, loading }: SidebarProps)
             ✕
           </button>
         </div>
+        <div className="sidebar-tagline">How technologies shaped each other across history</div>
         {nodeCount > 0 && (
           <div className="meta-counts">
             <span className="meta-count-highlight">

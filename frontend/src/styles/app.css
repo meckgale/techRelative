@@ -109,6 +109,15 @@ body,
   font-weight: 600;
 }
 
+.sidebar-tagline {
+  margin: 10px 0;
+  padding-left: 8px;
+  border-left: 2px solid var(--accent);
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
 .meta-counts {
   margin-top: 6px;
   font-size: 11px;

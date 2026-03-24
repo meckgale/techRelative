@@ -1,8 +1,10 @@
 import { useEffect, lazy, Suspense } from 'react'
 import Sidebar from './components/Sidebar/Sidebar'
+import WelcomeModal from './components/WelcomeModal/WelcomeModal'
 import { useGraphData } from './hooks/useGraphData'
 import { useDebounce } from './hooks/useDebounce'
 import { useAppStore } from './store/useAppStore'
+import { useAutoSelect } from './hooks/useAutoSelect'
 import './styles/app.css'
 
 const ForceGraph = lazy(() => import('./components/Graph/ForceGraph'))
@@ -18,6 +20,8 @@ export default function App() {
   const toggleSidebar = useAppStore((s) => s.toggleSidebar)
   const closeSidebar = useAppStore((s) => s.closeSidebar)
 
+  useAutoSelect()
+
   // Close sidebar when resizing above mobile breakpoint
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 768px)')
@@ -31,6 +35,7 @@ export default function App() {
 
   return (
     <div className="app-layout">
+      <WelcomeModal />
       {!sidebarOpen && (
         <button
           className="sidebar-toggle"

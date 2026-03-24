@@ -8,6 +8,11 @@ services:
       - PROXY_TOKEN=${PROXY_TOKEN}
     depends_on:
       - backend
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.5"
 
   backend:
     build: ./backend
@@ -17,7 +22,18 @@ services:
       - PROXY_TOKEN=${PROXY_TOKEN}
       - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost}
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1"
 
   mongo:
     image: mongo:7
@@ -27,6 +43,16 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD:-admin}
     volumes:
       - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1"
 
 volumes:
   mongo_data:

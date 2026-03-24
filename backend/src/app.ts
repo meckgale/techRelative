@@ -9,6 +9,9 @@ import apiRoutes from "./routes/api.js";
 
 const app = express();
 
+// Trust first proxy (Nginx) so req.ip reflects the real client IP
+app.set("trust proxy", 1);
+
 // Security headers
 app.use(helmet());
 

@@ -14,9 +14,16 @@ import {
 
 const router = Router();
 
-// Simple in-memory cache for graph data
+// Simple in-memory cache for graph data with automatic expiry cleanup
 export const graphCache = new Map();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of graphCache) {
+    if (now - entry.timestamp >= CACHE_TTL) graphCache.delete(key);
+  }
+}, CACHE_TTL);
 
 // ── GET /api/technologies ─────────────────────────────────────────────
 // Query params: era, category, search, page, limit

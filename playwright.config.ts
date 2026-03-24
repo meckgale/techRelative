@@ -31,7 +31,7 @@ const ciOnlyProjects = [
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
-  workers: isCI ? 1 : undefined,
+  workers: 1,
   retries: 2,
   timeout: 60000,
   globalSetup: "./e2e/global-setup.ts",

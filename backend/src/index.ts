@@ -12,11 +12,20 @@ connectDB().then(() => {
     console.log(`Backend running on :${PORT}`);
   });
 
-  const shutdown = async () => {
+  const shutdown = () => {
     console.log("Shutting down gracefully...");
-    server.close();
-    await mongoose.disconnect();
-    process.exit(0);
+
+    // Force exit after 10s if connections won't drain
+    const forceExit = setTimeout(() => {
+      console.error("Forcing shutdown after timeout");
+      process.exit(1);
+    }, 10_000);
+    forceExit.unref();
+
+    server.close(async () => {
+      await mongoose.disconnect();
+      process.exit(0);
+    });
   };
 
   process.on("SIGTERM", shutdown);

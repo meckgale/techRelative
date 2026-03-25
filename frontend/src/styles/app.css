@@ -471,7 +471,9 @@ body,
   width: 320px;
   max-width: 40%;
   height: 100%;
-  background: var(--bg-panel);
+  background: rgba(14, 16, 21, 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border-left: 1px solid var(--border);
   padding: 24px 20px;
   overflow-y: auto;
@@ -541,6 +543,8 @@ body,
   font-family: var(--font-mono);
   padding: 3px 8px;
   border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
 }
 
 .detail-year {

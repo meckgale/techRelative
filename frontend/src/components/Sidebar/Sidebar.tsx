@@ -104,6 +104,7 @@ export default function Sidebar({ nodeCount, edgeCount, loading }: SidebarProps)
     setSearchResults([])
     setSearchTerm('')
     setActiveIdx(-1)
+    closeSidebar()
     // Dismiss soft keyboard on mobile
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur()
@@ -225,9 +226,9 @@ export default function Sidebar({ nodeCount, edgeCount, loading }: SidebarProps)
       </div>
 
       {/* Eras */}
-      <div className="filter-section">
+      <div className="filter-section filter-section-divided">
         <label className="filter-label">Era</label>
-        <div className="chip-list">
+        <div className="chip-list chip-list--grid">
           {eras.map((era) => (
             <button
               key={era}
@@ -235,7 +236,7 @@ export default function Sidebar({ nodeCount, edgeCount, loading }: SidebarProps)
               onClick={() => handleEra(era)}
             >
               <span
-                className="chip-dot"
+                className="chip-dot chip-dot--square"
                 style={{ background: ERA_COLORS[era] || FALLBACK_COLOR }}
               />
               {era}
@@ -245,9 +246,9 @@ export default function Sidebar({ nodeCount, edgeCount, loading }: SidebarProps)
       </div>
 
       {/* Categories */}
-      <div className="filter-section">
+      <div className="filter-section filter-section-divided">
         <label className="filter-label">Category</label>
-        <div className="chip-list">
+        <div className="chip-list chip-list--grid">
           {categories.map((cat) => (
             <button
               key={cat}
@@ -272,7 +273,7 @@ export default function Sidebar({ nodeCount, edgeCount, loading }: SidebarProps)
       )}
 
       {recentlyViewed.length > 0 && (
-        <div className="filter-section">
+        <div className="filter-section filter-section-divided">
           <div className="recent-header">
             <label className="filter-label">Recently viewed</label>
             <button className="recent-clear" onClick={clearRecent}>

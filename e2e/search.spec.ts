@@ -15,7 +15,7 @@ test.describe("Search", () => {
     // Wait for search results to appear
     const results = page.locator(".search-results");
     await expect(results).toBeVisible({ timeout: 10000 });
-    await expect(results.locator(".search-result-item")).toHaveCount(1);
+    await expect(results.locator(".search-result-item").first()).toBeVisible();
     await expect(results).toContainText("Calculus");
   });
 

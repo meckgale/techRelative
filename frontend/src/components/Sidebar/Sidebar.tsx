@@ -306,6 +306,14 @@ export default function Sidebar({ nodeCount, edgeCount, loading }: SidebarProps)
       {loading && <div className="loading-indicator">Loading graph…</div>}
 
       <div className="sidebar-footer">
+        <p className="sidebar-disclaimer">
+          <strong>Data sources:</strong> Technology relationships and historical
+          data were derived from <a href="https://archive.org/details/historyofscience00bunc" target="_blank" rel="noopener noreferrer"><em>"The History of Science and Technology"</em></a>{' '}
+          by <em>Bryan Bunch</em> and <em>Alexander Hellemans</em>. All descriptions have been
+          independently paraphrased. Biographical links source from Wikipedia.
+          This is a non-commercial, educational portfolio project and is not
+          affiliated with or endorsed by the original authors or publisher.
+        </p>
         <a
           href="https://github.com/meckgale/techRelative"
           target="_blank"

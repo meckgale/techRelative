@@ -229,19 +229,23 @@ export default function Sidebar({ nodeCount, edgeCount, loading }: SidebarProps)
       <div className="filter-section filter-section-divided">
         <label className="filter-label">Era</label>
         <div className="chip-list chip-list--grid">
-          {eras.map((era) => (
-            <button
-              key={era}
-              className={`chip ${filters.era === era ? 'active' : ''}`}
-              onClick={() => handleEra(era)}
-            >
-              <span
-                className="chip-dot chip-dot--square"
-                style={{ background: ERA_COLORS[era] || FALLBACK_COLOR }}
-              />
-              {era}
-            </button>
-          ))}
+          {eras.map((era) => {
+            const color = ERA_COLORS[era] || FALLBACK_COLOR
+            return (
+              <button
+                key={era}
+                className={`chip ${filters.era === era ? 'active' : ''}`}
+                style={{ '--chip-color': color } as React.CSSProperties}
+                onClick={() => handleEra(era)}
+              >
+                <span
+                  className="chip-dot chip-dot--square"
+                  style={{ background: color }}
+                />
+                {era}
+              </button>
+            )
+          })}
         </div>
       </div>
 
@@ -249,19 +253,23 @@ export default function Sidebar({ nodeCount, edgeCount, loading }: SidebarProps)
       <div className="filter-section filter-section-divided">
         <label className="filter-label">Category</label>
         <div className="chip-list chip-list--grid">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              className={`chip ${filters.category === cat ? 'active' : ''}`}
-              onClick={() => handleCategory(cat)}
-            >
-              <span
-                className="chip-dot"
-                style={{ background: CATEGORY_COLORS[cat] || FALLBACK_COLOR }}
-              />
-              {cat}
-            </button>
-          ))}
+          {categories.map((cat) => {
+            const color = CATEGORY_COLORS[cat] || FALLBACK_COLOR
+            return (
+              <button
+                key={cat}
+                className={`chip ${filters.category === cat ? 'active' : ''}`}
+                style={{ '--chip-color': color } as React.CSSProperties}
+                onClick={() => handleCategory(cat)}
+              >
+                <span
+                  className="chip-dot"
+                  style={{ background: color }}
+                />
+                {cat}
+              </button>
+            )
+          })}
         </div>
       </div>
 

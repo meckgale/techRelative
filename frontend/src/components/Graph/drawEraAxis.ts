@@ -97,6 +97,31 @@ function drawPortraitAxis(
   ctx.lineTo(graphLeft, height)
   ctx.stroke()
 
+  // Tick marks at era boundaries connecting axis to graph
+  for (let i = 1; i < visibleEras.length; i++) {
+    const boundary = Math.max(visibleEras[i].start, timeExtent[0])
+    const yPos = t.y + t.k * timeScale(boundary)
+    if (yPos < 0 || yPos > height) continue
+
+    // Subtle tick extending from axis into graph area
+    const tickGrad = ctx.createLinearGradient(graphLeft, 0, graphLeft + 24, 0)
+    tickGrad.addColorStop(0, 'rgba(255,255,255,0.06)')
+    tickGrad.addColorStop(1, 'rgba(255,255,255,0)')
+    ctx.strokeStyle = tickGrad
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.moveTo(graphLeft, yPos)
+    ctx.lineTo(graphLeft + 24, yPos)
+    ctx.stroke()
+
+    // Small tick inside axis bar
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)'
+    ctx.beginPath()
+    ctx.moveTo(graphLeft - 6, yPos)
+    ctx.lineTo(graphLeft, yPos)
+    ctx.stroke()
+  }
+
   // Era labels (rotated vertically)
   ctx.font = '9px monospace'
   visibleEras.forEach((b) => {
@@ -175,6 +200,31 @@ function drawLandscapeAxis(
   ctx.moveTo(0, graphBottom)
   ctx.lineTo(width, graphBottom)
   ctx.stroke()
+
+  // Tick marks at era boundaries connecting axis to graph
+  for (let i = 1; i < visibleEras.length; i++) {
+    const boundary = Math.max(visibleEras[i].start, timeExtent[0])
+    const xPos = t.x + t.k * timeScale(boundary)
+    if (xPos < 0 || xPos > width) continue
+
+    // Subtle tick extending from axis into graph area
+    const tickGrad = ctx.createLinearGradient(0, graphBottom - 24, 0, graphBottom)
+    tickGrad.addColorStop(0, 'rgba(255,255,255,0)')
+    tickGrad.addColorStop(1, 'rgba(255,255,255,0.06)')
+    ctx.strokeStyle = tickGrad
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.moveTo(xPos, graphBottom - 24)
+    ctx.lineTo(xPos, graphBottom)
+    ctx.stroke()
+
+    // Small tick below axis line
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)'
+    ctx.beginPath()
+    ctx.moveTo(xPos, graphBottom)
+    ctx.lineTo(xPos, graphBottom + 6)
+    ctx.stroke()
+  }
 
   // Era labels
   ctx.font = '10px monospace'

@@ -321,7 +321,7 @@ export default function Sidebar({ nodeCount, edgeCount, loading }: SidebarProps)
           by <em>Bryan Bunch</em> and <em>Alexander Hellemans</em>.
         </p>
         <a
-          href="https://github.com/meckgale/techRelative"
+          href="https://github.com/meckgalen/techRelative"
           target="_blank"
           rel="noopener noreferrer"
           className="github-link"
